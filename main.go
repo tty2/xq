@@ -9,15 +9,25 @@ import (
 	"strings"
 )
 
-var tokens = []string{}
-var openedBrackets bool
-var startToken int
-var interruptedToken string
+var (
+	tokens           = []string{}
+	openedBrackets   bool
+	startToken       int
+	interruptedToken string
+)
 
 func main() {
+	err := readStdin()
+	if err != nil {
+		log.Fatal(err)
+	}
+}
 
+func readStdin() error {
 	r := bufio.NewReader(os.Stdin)
 	buf := make([]byte, 0, 4*1024)
+
+	pars := NewParser()
 
 	for {
 		n, err := r.Read(buf[:cap(buf)])
@@ -25,13 +35,16 @@ func main() {
 			if err == io.EOF {
 				break
 			}
-			log.Fatal(err)
+			return err
 		}
 
 		buf = buf[:n]
 
-		processChunk(string(buf))
+		pars.process(buf)
+
 	}
+
+	return nil
 }
 
 func processChunk(chunk string) {
