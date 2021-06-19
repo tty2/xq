@@ -16,22 +16,22 @@ const (
 	maxLineLen     = 120
 	indentItemSize = 2
 
-	carriageReturn = '\n'
+	carriageReturn = 10
 )
 
 type parser struct {
 	CurrentTag     tag
 	Data           []byte
-	IndentItemSize int // 2
+	IndentItemSize int
 	Indentation    int
-	InsideTag      bool // semaphore that shows if we read data inside another tag
-	MaxLen         int  // maximum line len
+	InsideTag      bool // semaphore that shows if we read data inside a tag
 }
 
 type tag struct {
-	Name   string
-	String string
-	Bytes  []byte
+	Name     string
+	String   string
+	Bytes    []byte
+	Brackets int
 }
 
 func NewParser() parser {
@@ -55,10 +55,18 @@ func (p *parser) process(chunk []byte) {
 			p.CurrentTag.Bytes = append(p.CurrentTag.Bytes, chunk[i])
 
 			if chunk[i] == closeBracket {
+				p.CurrentTag.Brackets -= 1
+
+				if p.CurrentTag.Brackets > 0 {
+					continue
+				}
+
 				p.InsideTag = false
 				p.Data = []byte{}
 				p.printTag()
 				p.Indentation++
+			} else if chunk[i] == openBracket {
+				p.CurrentTag.Brackets += 1
 			}
 
 			continue
@@ -70,6 +78,7 @@ func (p *parser) process(chunk []byte) {
 			p.CurrentTag = tag{
 				Bytes: []byte{chunk[i]},
 			}
+			p.CurrentTag.Brackets += 1
 
 			if len(p.Data) > 0 {
 				fmt.Printf("\n%s", strings.Repeat("  ", p.Indentation)+string(p.Data))
@@ -80,7 +89,6 @@ func (p *parser) process(chunk []byte) {
 
 		p.Data = append(p.Data, chunk[i])
 	}
-
 }
 
 func (p *parser) printTag() {
