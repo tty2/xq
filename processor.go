@@ -10,6 +10,8 @@ const (
 	closeBracket = '>'
 	openBracket  = '<'
 
+	minTagSize = 3 // minimum tag size can be 3. as example <b>
+
 	green = "\033[01;32m"
 	white = "\033[00m"
 
@@ -47,6 +49,7 @@ func NewParser() parser {
 func (p *parser) process(chunk []byte) {
 
 	for i := range chunk {
+		// skip carriage return and new line from data in order do not duplicate with created ones by parser
 		if chunk[i] == carriageReturn {
 			continue
 		}
@@ -92,7 +95,7 @@ func (p *parser) process(chunk []byte) {
 }
 
 func (p *parser) printTag() {
-	if len(p.CurrentTag.Bytes) < 3 {
+	if len(p.CurrentTag.Bytes) < minTagSize {
 		log.Fatalf("tag size is too small = %d, tag is `%s`", len(p.CurrentTag.Bytes), p.CurrentTag.Bytes)
 	}
 	if p.CurrentTag.Bytes[1] == '!' || p.CurrentTag.Bytes[1] == '?' {
