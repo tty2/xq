@@ -27,6 +27,7 @@ type parser struct {
 	IndentItemSize int
 	Indentation    int
 	InsideTag      bool // semaphore that shows if we read data inside a tag
+	SkipData       bool
 }
 
 type tag struct {
@@ -50,9 +51,14 @@ func (p *parser) process(chunk []byte) {
 
 	for i := range chunk {
 		// skip carriage return and new line from data in order do not duplicate with created ones by parser
-		if chunk[i] == carriageReturn {
+		if p.SkipData && (chunk[i] == ' ' || chunk[i] == '\t') {
 			continue
 		}
+		if chunk[i] == carriageReturn {
+			p.SkipData = true
+			continue
+		}
+		p.SkipData = false
 
 		if p.InsideTag {
 			p.CurrentTag.Bytes = append(p.CurrentTag.Bytes, chunk[i])
@@ -67,7 +73,6 @@ func (p *parser) process(chunk []byte) {
 				p.InsideTag = false
 				p.Data = []byte{}
 				p.printTag()
-				p.Indentation++
 			} else if chunk[i] == openBracket {
 				p.CurrentTag.Brackets += 1
 			}
@@ -100,7 +105,6 @@ func (p *parser) printTag() {
 	}
 	if p.CurrentTag.Bytes[1] == '!' || p.CurrentTag.Bytes[1] == '?' {
 		fmt.Printf("%s", p.CurrentTag.Bytes)
-		p.Indentation--
 		return
 	}
 
@@ -108,6 +112,7 @@ func (p *parser) printTag() {
 	if p.CurrentTag.Bytes[1] == '/' {
 		startName = 2
 		p.Indentation--
+		defer p.downIndent()
 	}
 
 	endName := startName
@@ -117,12 +122,15 @@ func (p *parser) printTag() {
 		}
 	}
 
-	p.CurrentTag.String = strings.Repeat("  ", p.Indentation) + string(p.CurrentTag.Bytes[:startName]) + green + string(p.CurrentTag.Bytes[startName:endName]) +
-		white + string(p.CurrentTag.Bytes[endName:])
+	p.CurrentTag.String = strings.Repeat("  ", p.Indentation) + string(p.CurrentTag.Bytes[:startName]) +
+		green + string(p.CurrentTag.Bytes[startName:endName]) +
+		white + string(p.CurrentTag.Bytes[endName:len(p.CurrentTag.Bytes)])
 
 	fmt.Printf("\n%s", p.CurrentTag.String)
 
-	if p.CurrentTag.Bytes[1] == '/' {
-		p.Indentation--
-	}
+	p.Indentation++
+}
+
+func (p *parser) downIndent() {
+	p.Indentation--
 }
