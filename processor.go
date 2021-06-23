@@ -15,7 +15,6 @@ const (
 	green = "\033[01;32m"
 	white = "\033[00m"
 
-	maxLineLen     = 120
 	indentItemSize = 2
 
 	carriageReturn = 10
@@ -37,7 +36,7 @@ type tag struct {
 	Brackets int
 }
 
-func NewParser() parser {
+func newParser() parser {
 	return parser{
 		IndentItemSize: indentItemSize,
 		Data:           []byte{},
@@ -64,7 +63,7 @@ func (p *parser) process(chunk []byte) {
 			p.CurrentTag.Bytes = append(p.CurrentTag.Bytes, chunk[i])
 
 			if chunk[i] == closeBracket {
-				p.CurrentTag.Brackets -= 1
+				p.CurrentTag.Brackets--
 
 				if p.CurrentTag.Brackets > 0 {
 					continue
@@ -74,7 +73,7 @@ func (p *parser) process(chunk []byte) {
 				p.Data = []byte{}
 				p.printTag()
 			} else if chunk[i] == openBracket {
-				p.CurrentTag.Brackets += 1
+				p.CurrentTag.Brackets++
 			}
 
 			continue
@@ -86,7 +85,7 @@ func (p *parser) process(chunk []byte) {
 			p.CurrentTag = tag{
 				Bytes: []byte{chunk[i]},
 			}
-			p.CurrentTag.Brackets += 1
+			p.CurrentTag.Brackets++
 
 			if len(p.Data) > 0 {
 				fmt.Printf("\n%s", strings.Repeat("  ", p.Indentation)+string(p.Data))

@@ -19,7 +19,7 @@ func readStdin() error {
 	r := bufio.NewReader(os.Stdin)
 	buf := make([]byte, 0, 4*1024)
 
-	pars := NewParser()
+	pars := newParser()
 
 	for {
 		n, err := r.Read(buf[:cap(buf)])
