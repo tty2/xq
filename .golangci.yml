@@ -1,0 +1,190 @@
+name:
+  shooting GolangCI-Lint Configuration
+run:
+  deadline: 30m
+  skip-dirs:
+    - mocks
+  skip-files:
+    - ".*_mock.go$"
+    - "mock_*.go$"
+  modules-download-mode: vendor
+
+output:
+  # colored-line-number|line-number|json|tab|checkstyle|code-climate, default is "colored-line-number"
+  format: colored-line-number
+
+linters-settings:
+  errcheck:
+    # report about not checking of errors in type assetions: `a := b.(MyStruct)`;
+    # default is false: such cases aren't reported by default.
+    check-type-assertions: true
+
+    # report about assignment of errors to blank identifier: `num, _ := strconv.Atoi(numStr)`;
+    # default is false: such cases aren't reported by default.
+    check-blank: true
+
+  govet:
+    # report about shadowed variables
+
+  golint:
+    # minimal confidence for issues, default is 0.8
+    min-confidence: 0
+  goimports:
+    # put imports beginning with prefix after 3rd-party packages;
+    # it's a comma-separated list of prefixes
+  gocyclo:
+    # minimal code complexity to report, 30 by default (but we recommend 10-20)
+    min-complexity: 10
+  dupl:
+    # tokens count to trigger issue, 150 by default
+    threshold: 100
+  goconst:
+    # minimal length of string constant, 3 by default
+    min-len: 2
+    # minimal occurrences count to trigger, 3 by default
+    min-occurrences: 3
+#  lll:
+#    # max line length, lines longer will be reported. Default is 120.
+#    # '\t' is counted as 1 character by default, and can be changed with the tab-width option
+#    line-length: 120
+#    # tab width in spaces. Default to 1.
+#    tab-width: 4
+  nakedret:
+    # make an issue if func has more lines of code than this setting and it has naked returns; default is 30
+    max-func-lines: 10
+  gocritic:
+    # Enable multiple checks by tags, run `GL_DEBUG=gocritic golangci-lint` run to see all tags and checks.
+    # Empty list by default. See https://github.com/go-critic/go-critic#usage -> section "Tags".
+    enabled-tags:
+      - performance
+      - style
+      - experimental
+
+    # Which checks should be disabled; can't be combined with 'enabled-checks'; default is empty
+    disabled-checks:
+      - wrapperFunc
+      - hugeParam
+      - rangeValCopy
+      - unnamedResult
+
+linters:
+  # Disabling all linters to manually specify linters we want to run
+  disable-all: true
+
+  enable:
+# TODO: Enable all required linters:
+# REQUIRED:
+    - goimports           # Goimports does everything that gofmt does. Additionally it checks unused imports
+
+    - unparam             # Reports unused function parameters
+
+    - ineffassign         # Detects when assignments to existing variables are not used
+
+    - errcheck            # Errcheck is a program for checking for unchecked errors in go programs. These unchecked errors can be critical bugs in some cases
+
+    - nakedret            # Finds naked returns in functions greater than a specified function length
+
+    - govet               # Vet examines Go source code and reports suspicious constructs, such as Printf calls whose arguments do not align with the format string
+
+    # - scopelint           # Scopelint checks for unpinned variables in go programs
+
+    - exportloopref
+
+#    - gocyclo             # Computes and checks the cyclomatic complexity of functions
+
+    - megacheck           # Run staticcheck, gosimple and unused, sharing work
+
+    - stylecheck          # Is a replacement for golint
+
+    - gocritic            # The most opinionated Go source code linter
+
+    - prealloc            # Finds slice declarations that could potentially be preallocated
+
+    - varcheck            # Finds unused global variables and constants
+
+    - structcheck         # Finds an unused struct fields
+
+    - deadcode            # Finds unused code
+
+    - unconvert           # Remove unnecessary type conversions
+
+    - goconst             # Finds repeated strings that could be replaced by a constant
+
+    - typecheck           # Syntactic and semantic analysis similar to the Go compiler
+
+    - gochecknoinits      # Checks that no init functions are present in Go code
+
+#    - gochecknoglobals    # Checks that no globals are present in Go code
+
+    - gosec               # Inspects source code for security problems
+
+    - golint              # Golint differs from gofmt. Gofmt reformats Go source code, whereas golint prints out style mistakes
+
+    - misspell            # Finds commonly misspelled English words in comments
+
+#    - dupl                # Tool for code clone detection
+
+    - lll                 # Reports long lines
+
+# OPTIONAL:
+
+# NOT NEEDED:
+
+#    - staticcheck         # Staticcheck is a go vet on steroids, applying a ton of static analysis checks
+                           # Reason: staticcheck has been merged into the megacheck tool.
+
+#    - unused              # Checks Go code for unused constants, variables, functions and types
+                           # Reason: unused has been merged into the megacheck tool.
+
+#    - depguard            # Go linter that checks if package imports are in a list of acceptable packages
+                           # Reason: the blacklist is absent
+
+#    - gofmt               # Gofmt checks whether code was gofmt-ed. By default this tool runs with -s option to check for code simplification
+                           # Reason: goimports is used instead
+
+#    - gosimple            # Linter for Go source code that specializes in simplifying a code
+                           # Reason: gosimple has been merged into the staticcheck tool.
+
+#    - interfacer          # Linter that suggests narrower interface types
+                           # Reason: from https://github.com/mvdan/interfacer: "A tool that suggests interfaces is prone
+                           # to bad suggestions, so its usefulness in real code is limited. This tool will remain
+                           # available as a proof of concept, and for others to examine and learn from."
+
+issues:
+  # Independently from option `exclude` we use default exclude patterns,
+  # it can be disabled by this option. To list all
+  # excluded by default patterns execute `golangci-lint run --help`.
+  # Default value for this option is true.
+  exclude-use-default: false
+
+  exclude-rules:
+    # We don't need it from gosec, because we have errcheck
+    - linters:
+        - gosec
+      text: "G104:"
+
+    # Currently this check gives us too much false positives
+    - linters:
+        - gosec
+      text: "G201:"
+
+    # Currently this check gives us too much false positives
+    - linters:
+        - gosec
+      text: "G202:"
+
+    # Currently it's always complaining to the lack for package commit even if it exists.
+    - linters:
+        - golint
+      text: "should have a package comment, unless it's in another file for this package"
+
+    # It's ok to have not so secure code in tests
+    - path: _test\.go
+      linters:
+        - gosec
+
+  # Maximum issues count per one linter. Set to 0 to disable. Default is 50.
+  max-issues-per-linter: 0
+
+  # Maximum count of issues with the same text. Set to 0 to disable. Default is 3.
+  max-same-issues: 0

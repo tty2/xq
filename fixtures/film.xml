@@ -1,0 +1,108 @@
+<objects>
+  <object id="1997" title="Knockin' on Heaven's Door" categories="Movie" genres="Crime Tragicomedy" serial="false" wiki="https://en.wikipedia.org/wiki/Knockin%27_on_Heaven%27s_Door_(1997_film)" type="FILM">
+    <qualities>
+      <quality value="SD">
+      </quality>
+    </qualities>
+    <info year="1997" country="Germany" budget="3500000" release="856429200" duration="86">
+    </info>
+    <actors>
+      <actor>
+        Til Schweiger
+      </actor>
+      <actor>
+        Jan Josef Liefers
+      </actor>
+      <actor>
+        Thierry Van Werveke
+      </actor>
+      <actor>
+        Moritz Bleibtreu
+      </actor>
+      <actor>
+        Huub Stapel
+      </actor>
+      <actor>
+        Leonard Lansink
+      </actor>
+      <actor>
+        Ralph Herforth
+      </actor>
+      <actor>
+        Cornelia Froboess
+      </actor>
+      <actor>
+        Rutger Hauer
+      </actor>
+      <actor>
+        Christiane Paul
+      </actor>
+    </actors>
+    <directors>
+      <director>
+        Thomas Jahn
+      </director>
+      <director>
+        Til Schweiger
+      </director>
+    </directors>
+    <finger_language>
+      0
+    </finger_language>
+    <audio_description>
+      0
+    </audio_description>
+    <ratings imdb="7.9" metacritic="8.2">
+    </ratings>
+    <poster url="https://upload.wikimedia.org/wikipedia/en/8/8f/Knockin%E2%80%99_on_Heaven%E2%80%99s_Door_Poster.jpg" thumbnail="https://upload.wikimedia.org/wikipedia/en/8/8f/Knockin%E2%80%99_on_Heaven%E2%80%99s_Door_Poster.jpg">
+    </poster>
+    <trailer id="3301251" title="trailer" duration_sec="89" age_limit="18">
+      <iframe src="https://youtu.be/mSpsgD8MENg" scrolling="true" allowfullscreen="true">
+      </iframe>
+    </trailer>
+    <plot><![CDATA[Two patients (Martin Brest and Rudi Wurlitzer) meet in a hospital, just after learning that both have untreatable diseases with short life expectancies. They start talking about their death that is to come very soon. When they find a bottle of tequila, Martin finds out that Rudi has never seen the sea. Martin tells Rudi that all they talk about in Heaven is how beautiful the sea is. Drunk and still in their pajamas, they steal a baby blue <b>Mercedes-Benz W113</b> classic roadster and go for their last mission - to see the <b>sea</b>.]]>
+    </plot>
+    <embed_allowed>
+      1
+    </embed_allowed>
+    <ios_allowed>
+      1
+    </ios_allowed>
+    <smart_tv_allowed>
+      1
+    </smart_tv_allowed>
+    <web_allowed>
+      1
+    </web_allowed>
+    <release_data>
+      1997-02-20T09:00:00
+    </release_data>
+    <contract_id>
+      180
+    </contract_id>
+    <age_limit>
+      18
+    </age_limit>
+    <protection>
+      0
+    </protection>
+    <duration_sec>
+      5160
+    </duration_sec>
+    <gallery-image url="https://upload.wikimedia.org/wikipedia/en/8/8f/Knockin%E2%80%99_on_Heaven%E2%80%99s_Door_Poster.jpg" thumbnail="https://upload.wikimedia.org/wikipedia/en/8/8f/Knockin%E2%80%99_on_Heaven%E2%80%99s_Door_Poster.jpg">
+    </gallery-image>
+    <audio_list>
+      <audio_lang>
+        English
+      </audio_lang>
+    </audio_list>
+    <subtitles>
+      <subtitle_lang>
+        English
+      </subtitle_lang>
+      <subtitle_lang>
+        Genrman
+      </subtitle_lang>
+    </subtitles>
+  </object>
+</objects>
