@@ -25,19 +25,19 @@ example structure
 
 first level
 
-    ~$ xq tags
+    ~$ xq tags .
 
     objects
 
 second level
 
-    ~$ xq tags objects
+    ~$ xq tags .objects
 
     object
 
 third level
 
-    ~$ xq tags objects.object
+    ~$ xq tags .objects.object
 
     title
     description
@@ -47,7 +47,7 @@ third level
 
 if tag is a container for other tags
 
-    ~$ xq objects.object
+    ~$ xq .objects.object
 
     <title lang="EN">Name</title>
     <description>Name</description>
@@ -57,9 +57,20 @@ if tag is a container for other tags
     <description>Описание</description>
     <key attr="second">2</key>
 
-if tag is a container for other tags, for the first object only
 
-    ~$ xq objects.object[0]
+if tag is a container for scalar data
+
+    ~$ xq .objects.object.title
+
+    Name
+    Имя
+
+### get a value of a concrete tag 
+
+
+if tag is a container for other tags
+
+    ~$ xq .objects.object[0]
 
     <title lang="EN">Name</title>
     <description>Name</description>
@@ -67,14 +78,7 @@ if tag is a container for other tags, for the first object only
 
 if tag is a container for scalar data
 
-    ~$ xq objects.object.title
-
-    Name
-    Имя
-
-### get a value of a concrete tag 
-
-    ~$ xq objects.object[0].title
+    ~$ xq .objects.object[0].title
 
     Name
 
@@ -82,13 +86,23 @@ if tag is a container for scalar data
 
 for tags list
 
-    ~$ xq objects.object.title:lang
+    ~$ xq .objects.object.title:lang
 
     EN
     RU
 
 for concrete tag
 
-    ~$ xq objects.object[0].title:lang
+    ~$ xq .objects.object[0].title:lang
 
     EN
+
+## API Status
+
+- [x] Add indentation for output
+- [x] Colorize tags
+- [ ] Colorize attributes
+- [ ] Get tags list
+- [ ] Get attributes list
+- [ ] Get tag's data
+- [ ] Get attributes data

@@ -12,8 +12,10 @@ const (
 
 	minTagSize = 3 // minimum tag size can be 3. as example <b>
 
-	green = "\033[01;32m"
-	white = "\033[00m"
+	red    = "\033[01;31m"
+	green  = "\033[01;32m"
+	yellow = "\033[01;33m"
+	white  = "\033[00m"
 
 	indentItemSize = 2
 
