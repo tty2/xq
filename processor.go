@@ -12,14 +12,13 @@ const (
 
 	minTagSize = 3 // minimum tag size can be 3. as example <b>
 
-	red    = "\033[01;31m"
-	green  = "\033[01;32m"
-	yellow = "\033[01;33m"
-	white  = "\033[00m"
+	red   = "\033[01;31m"
+	green = "\033[01;32m"
+	white = "\033[00m"
 
 	indentItemSize = 2
 
-	carriageReturn = 10
+	carriageReturn = 10 // '\n'
 )
 
 type parser struct {
@@ -101,13 +100,16 @@ func (p *parser) process(chunk []byte) {
 }
 
 func (p *parser) printTag() {
-	if len(p.CurrentTag.Bytes) < minTagSize {
-		log.Fatalf("tag size is too small = %d, tag is `%s`", len(p.CurrentTag.Bytes), p.CurrentTag.Bytes)
+	ln := len(p.CurrentTag.Bytes)
+	if ln < minTagSize {
+		log.Fatalf("tag size is too small = %d, tag is `%s`", ln, p.CurrentTag.Bytes)
 	}
-	if p.CurrentTag.Bytes[1] == '!' || p.CurrentTag.Bytes[1] == '?' {
+	if p.CurrentTag.Bytes[1] == '!' || p.CurrentTag.Bytes[1] == '?' { // service tag or cdata
 		fmt.Printf("%s", p.CurrentTag.Bytes)
 		return
 	}
+
+	printBytes := make([]byte, 0, p.Indentation+ln)
 
 	startName := 1
 	if p.CurrentTag.Bytes[1] == '/' {
@@ -123,11 +125,27 @@ func (p *parser) printTag() {
 		}
 	}
 
-	p.CurrentTag.String = strings.Repeat("  ", p.Indentation) + string(p.CurrentTag.Bytes[:startName]) +
-		green + string(p.CurrentTag.Bytes[startName:endName]) +
-		white + string(p.CurrentTag.Bytes[endName:len(p.CurrentTag.Bytes)])
+	for l := p.IndentItemSize * p.Indentation; l > 0; l-- {
+		printBytes = append(printBytes, ' ')
+	}
 
-	fmt.Printf("\n%s", p.CurrentTag.String)
+	printBytes = append(printBytes, p.CurrentTag.Bytes[:startName]...)        // add indentation
+	printBytes = append(printBytes, []byte(red)...)                           // add red color
+	printBytes = append(printBytes, p.CurrentTag.Bytes[startName:endName]...) // tag name
+	printBytes = append(printBytes, []byte(green)...)
+
+	for i := endName; i < ln-1; i++ {
+		if p.CurrentTag.Bytes[i] == '=' {
+			printBytes = append(printBytes, []byte(white)...)
+		} else if p.CurrentTag.Bytes[i] == ' ' && p.CurrentTag.Bytes[i-1] == '"' {
+			printBytes = append(printBytes, []byte(green)...)
+		}
+		printBytes = append(printBytes, p.CurrentTag.Bytes[i])
+	}
+	printBytes = append(printBytes, []byte(white)...)         // turn back to white color
+	printBytes = append(printBytes, p.CurrentTag.Bytes[ln-1]) // add close bracket
+
+	fmt.Printf("\n%s", printBytes)
 
 	p.Indentation++
 }
