@@ -1,9 +1,9 @@
 package main
 
 import (
+	"bytes"
 	"fmt"
 	"log"
-	"strings"
 )
 
 const (
@@ -12,14 +12,13 @@ const (
 
 	minTagSize = 3 // minimum tag size can be 3. as example <b>
 
-	red    = "\033[01;31m"
-	green  = "\033[01;32m"
-	yellow = "\033[01;33m"
-	white  = "\033[00m"
+	red   = "\033[01;31m"
+	green = "\033[01;32m"
+	white = "\033[00m"
 
 	indentItemSize = 2
 
-	carriageReturn = 10
+	carriageReturn = 10 // '\n'
 )
 
 type parser struct {
@@ -90,7 +89,7 @@ func (p *parser) process(chunk []byte) {
 			p.CurrentTag.Brackets++
 
 			if len(p.Data) > 0 {
-				fmt.Printf("\n%s", strings.Repeat("  ", p.Indentation)+string(p.Data))
+				fmt.Printf("%s\n", append(bytes.Repeat([]byte(" "), p.IndentItemSize*p.Indentation), p.Data...))
 			}
 
 			continue
@@ -104,13 +103,27 @@ func (p *parser) printTag() {
 	if len(p.CurrentTag.Bytes) < minTagSize {
 		log.Fatalf("tag size is too small = %d, tag is `%s`", len(p.CurrentTag.Bytes), p.CurrentTag.Bytes)
 	}
-	if p.CurrentTag.Bytes[1] == '!' || p.CurrentTag.Bytes[1] == '?' {
-		fmt.Printf("%s", p.CurrentTag.Bytes)
+	if p.CurrentTag.Bytes[1] == '!' || p.CurrentTag.Bytes[1] == '?' { // service tag, comment or cdata
+		fmt.Printf("%s\n", append(bytes.Repeat([]byte(" "), p.IndentItemSize*p.Indentation), p.CurrentTag.Bytes...))
 		return
 	}
 
-	startName := 1
-	if p.CurrentTag.Bytes[1] == '/' {
+	fmt.Printf("%s\n", p.colorizeTag())
+
+	p.Indentation++
+}
+
+func (p *parser) downIndent() {
+	p.Indentation--
+}
+
+func (p *parser) colorizeTag() []byte {
+	ln := len(p.CurrentTag.Bytes)
+
+	coloredTag := make([]byte, 0, p.Indentation+ln)
+
+	startName := 1                    // name starts after open bracket
+	if p.CurrentTag.Bytes[1] == '/' { // closed tag
 		startName = 2
 		p.Indentation--
 		defer p.downIndent()
@@ -123,15 +136,22 @@ func (p *parser) printTag() {
 		}
 	}
 
-	p.CurrentTag.String = strings.Repeat("  ", p.Indentation) + string(p.CurrentTag.Bytes[:startName]) +
-		green + string(p.CurrentTag.Bytes[startName:endName]) +
-		white + string(p.CurrentTag.Bytes[endName:len(p.CurrentTag.Bytes)])
+	coloredTag = append(coloredTag, bytes.Repeat([]byte(" "), p.IndentItemSize*p.Indentation)...) // add indentation
+	coloredTag = append(coloredTag, p.CurrentTag.Bytes[:startName]...)                            // add open bracket
+	coloredTag = append(coloredTag, []byte(red)...)                                               // add red color
+	coloredTag = append(coloredTag, p.CurrentTag.Bytes[startName:endName]...)                     // tag name
+	coloredTag = append(coloredTag, []byte(green)...)                                             // attribute name starts
 
-	fmt.Printf("\n%s", p.CurrentTag.String)
+	for i := endName; i < ln-1; i++ {
+		if p.CurrentTag.Bytes[i] == '=' { // value of attribute
+			coloredTag = append(coloredTag, []byte(white)...)
+		} else if p.CurrentTag.Bytes[i] == ' ' && p.CurrentTag.Bytes[i-1] == '"' { // end attribute value
+			coloredTag = append(coloredTag, []byte(green)...)
+		}
+		coloredTag = append(coloredTag, p.CurrentTag.Bytes[i])
+	}
+	coloredTag = append(coloredTag, []byte(white)...)
+	coloredTag = append(coloredTag, p.CurrentTag.Bytes[ln-1]) // add close bracket
 
-	p.Indentation++
-}
-
-func (p *parser) downIndent() {
-	p.Indentation--
+	return coloredTag
 }

@@ -2,7 +2,6 @@ package main
 
 import (
 	"bufio"
-	"fmt"
 	"io"
 	"log"
 	"os"
@@ -34,8 +33,6 @@ func readStdin() error {
 
 		pars.process(buf)
 	}
-
-	fmt.Println("")
 
 	return nil
 }
