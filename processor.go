@@ -18,7 +18,8 @@ const (
 
 	indentItemSize = 2
 
-	carriageReturn = 10 // '\n'
+	newLine        = 10 // '\n'
+	carriageReturn = 13 // '\r'
 )
 
 type parser struct {
@@ -54,7 +55,7 @@ func (p *parser) process(chunk []byte) {
 		if p.SkipData && (chunk[i] == ' ' || chunk[i] == '\t') {
 			continue
 		}
-		if chunk[i] == carriageReturn {
+		if chunk[i] == newLine || chunk[i] == carriageReturn {
 			p.SkipData = true
 			continue
 		}
@@ -71,8 +72,8 @@ func (p *parser) process(chunk []byte) {
 				}
 
 				p.InsideTag = false
-				p.Data = []byte{}
 				p.printTag()
+				p.SkipData = true // skip if there are empty symbols beeween close tag and new data
 			} else if chunk[i] == openBracket {
 				p.CurrentTag.Brackets++
 			}
@@ -90,6 +91,7 @@ func (p *parser) process(chunk []byte) {
 
 			if len(p.Data) > 0 {
 				fmt.Printf("%s\n", append(bytes.Repeat([]byte(" "), p.IndentItemSize*p.Indentation), p.Data...))
+				p.Data = []byte{}
 			}
 
 			continue
