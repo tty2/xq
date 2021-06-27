@@ -86,14 +86,14 @@ if tag is a container for scalar data
 
 for tags list
 
-    ~$ xq .objects.object.title:lang
+    ~$ xq .objects.object.title#lang
 
     EN
     RU
 
 for concrete tag
 
-    ~$ xq .objects.object[0].title:lang
+    ~$ xq .objects.object[0].title#lang
 
     EN
 
