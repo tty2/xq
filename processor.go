@@ -20,6 +20,9 @@ const (
 
 	newLine        = 10 // '\n'
 	carriageReturn = 13 // '\r'
+
+	quote       = 39
+	doubleQuote = 34
 )
 
 type parser struct {
@@ -150,7 +153,7 @@ func (p *parser) colorizeTag() []byte {
 		if p.CurrentTag.Bytes[i] == '=' { // value of attribute
 			coloredTag = append(coloredTag, []byte(white)...)
 			// i != ln-3 in order do not colorize `/` sign inside an empty tag in case like this `<...attr="value" />`
-		} else if p.CurrentTag.Bytes[i] == ' ' && p.CurrentTag.Bytes[i-1] == '"' && i != ln-3 { // end attribute value
+		} else if i != ln-3 && p.CurrentTag.Bytes[i] == ' ' && isQuote(p.CurrentTag.Bytes[i-1]) { // end attribute value
 			coloredTag = append(coloredTag, []byte(green)...)
 		}
 		coloredTag = append(coloredTag, p.CurrentTag.Bytes[i])
@@ -159,4 +162,8 @@ func (p *parser) colorizeTag() []byte {
 	coloredTag = append(coloredTag, p.CurrentTag.Bytes[ln-1]) // add close bracket
 
 	return coloredTag
+}
+
+func isQuote(s byte) bool {
+	return s == quote || s == doubleQuote
 }
