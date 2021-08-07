@@ -23,6 +23,8 @@ const (
 
 	quote       = 39
 	doubleQuote = 34
+
+	space = 32
 )
 
 type parser struct {
@@ -39,6 +41,14 @@ type tag struct {
 	String   string
 	Bytes    []byte
 	Brackets int
+}
+
+type attribute struct {
+	Name        []byte
+	Value       []byte
+	Quote       byte
+	NextIsQuote bool
+	InsideValue bool
 }
 
 func newParser() parser {
@@ -147,16 +157,52 @@ func (p *parser) colorizeTag() []byte {
 	coloredTag = append(coloredTag, p.CurrentTag.Bytes[:startName]...)                            // add open bracket
 	coloredTag = append(coloredTag, []byte(red)...)                                               // add red color
 	coloredTag = append(coloredTag, p.CurrentTag.Bytes[startName:endName]...)                     // tag name
-	coloredTag = append(coloredTag, []byte(green)...)                                             // attribute name starts
+	// coloredTag = append(coloredTag, []byte(green)...)                                             // attribute name starts
 
+	attr := attribute{
+		Value: []byte{},
+	}
 	for i := endName; i < ln-1; i++ {
-		if p.CurrentTag.Bytes[i] == '=' { // value of attribute
-			coloredTag = append(coloredTag, []byte(white)...)
-			// i != ln-3 in order do not colorize `/` sign inside an empty tag in case like this `<...attr="value" />`
-		} else if i != ln-3 && p.CurrentTag.Bytes[i] == ' ' && isQuote(p.CurrentTag.Bytes[i-1]) { // end attribute value
-			coloredTag = append(coloredTag, []byte(green)...)
+		if attr.NextIsQuote {
+			if isQuote(p.CurrentTag.Bytes[i]) {
+				attr.Quote = p.CurrentTag.Bytes[i]
+				attr.NextIsQuote = false
+				attr.InsideValue = true
+			}
+			continue
 		}
-		coloredTag = append(coloredTag, p.CurrentTag.Bytes[i])
+		if attr.InsideValue {
+			if p.CurrentTag.Bytes[i] == attr.Quote && attr.Value[len(attr.Value)-1] != '\\' {
+				attr.InsideValue = false
+				coloredTag = append(coloredTag, space)
+				coloredTag = append(coloredTag, []byte(green)...)
+				coloredTag = append(coloredTag, attr.Name...)
+				coloredTag = append(coloredTag, []byte(white)...)
+				coloredTag = append(coloredTag, '=')
+				coloredTag = append(coloredTag, attr.Quote)
+				coloredTag = append(coloredTag, attr.Value...)
+				coloredTag = append(coloredTag, attr.Quote)
+				attr = attribute{
+					Value: []byte{},
+				}
+			} else {
+				attr.Value = append(attr.Value, p.CurrentTag.Bytes[i])
+			}
+			continue
+		}
+		if p.CurrentTag.Bytes[i] == ' ' {
+			continue
+		}
+		if p.CurrentTag.Bytes[i] == '=' { // value of attribute
+			attr.NextIsQuote = true
+			coloredTag = append(coloredTag, []byte(white)...)
+			continue
+			// i != ln-3 in order do not colorize `/` sign inside an empty tag in case like this `<...attr="value" />`
+		} else if p.CurrentTag.Bytes[i] == '/' && i == ln-2 { // end attribute value
+			coloredTag = append(coloredTag, p.CurrentTag.Bytes[i])
+			continue
+		}
+		attr.Name = append(attr.Name, p.CurrentTag.Bytes[i])
 	}
 	coloredTag = append(coloredTag, []byte(white)...)
 	coloredTag = append(coloredTag, p.CurrentTag.Bytes[ln-1]) // add close bracket

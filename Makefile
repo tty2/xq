@@ -20,6 +20,7 @@ install: ## Install library.
 	@echo -e "\033[2m→ Installing library...\033[0m"
 	go install
 
+
 ##@ Generate
 hash-gen: ## Gererates result files for tests
 	@echo -e "\033[2m→ Generating result files for tests...\033[0m"
@@ -27,6 +28,11 @@ hash-gen: ## Gererates result files for tests
 	echo "" >> fixtures/hashes.txt
 	cat fixtures/film.xml | go run main.go processor.go | md5sum | awk '{print $$1}' >>  fixtures/hashes.txt
 	cat fixtures/flat.xml | go run main.go processor.go | md5sum | awk '{print $$1}' >> fixtures/hashes.txt
+
+gen: ## Generate result to `generate` folder
+	@echo -e "\033[2m→ Generating test files...\033[0m"
+	cat fixtures/film.xml | go run main.go processor.go > generate/film.xml
+	cat fixtures/flat.xml | go run main.go processor.go > generate/flat.xml
 
 ##@ Other
 #------------------------------------------------------------------------------
