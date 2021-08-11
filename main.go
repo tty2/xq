@@ -8,13 +8,14 @@ import (
 )
 
 func main() {
-	err := readStdin()
+	q := parseQuery()
+	err := readStdin(q)
 	if err != nil {
 		log.Fatal(err)
 	}
 }
 
-func readStdin() error {
+func readStdin(q query) error {
 	r := bufio.NewReader(os.Stdin)
 	buf := make([]byte, 0, 4*1024)
 
