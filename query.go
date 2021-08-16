@@ -23,7 +23,7 @@ const (
 	tagValue
 	attr
 	attrValue
-	all
+	empty
 )
 
 func parseQuery() query {
@@ -58,7 +58,7 @@ func toTag(s string) int {
 	case "aValue":
 		return attrValue
 	default:
-		return all
+		return empty
 	}
 }
 
@@ -78,7 +78,7 @@ func getQuery() query {
 		}
 	default:
 		q = query{
-			target:  tags,
+			target:  empty,
 			request: ".",
 		}
 	}
@@ -86,6 +86,10 @@ func getQuery() query {
 }
 
 func (q *query) getPath() []step {
+	if q.request == "." {
+		return []step{}
+	}
+
 	path := strings.Split(q.request, ".")
 
 	steps := []step{}
