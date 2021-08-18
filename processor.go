@@ -20,8 +20,8 @@ const (
 	newLine        = 10 // '\n'
 	carriageReturn = 13 // '\r'
 
-	quote       = 39
-	doubleQuote = 34
+	quote       = 39 // '
+	doubleQuote = 34 // "
 
 	space = 32
 )
