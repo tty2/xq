@@ -72,7 +72,7 @@ func newParser(q query) parser {
 
 func (p *parser) process(r *bufio.Reader) error {
 	if len(p.searchQuery.query.path) == 0 {
-		return p.fullProccess(r)
+		return p.fullProcess(r)
 	}
 
 	if p.searchQuery.query.attribute != "" {
@@ -82,7 +82,7 @@ func (p *parser) process(r *bufio.Reader) error {
 	return p.tagsProcess(r)
 }
 
-func (p *parser) fullProccess(r *bufio.Reader) error {
+func (p *parser) fullProcess(r *bufio.Reader) error {
 	buf := make([]byte, 0, 4*1024)
 
 	for {
