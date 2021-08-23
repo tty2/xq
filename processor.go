@@ -75,7 +75,11 @@ func (p *parser) process(r *bufio.Reader) error {
 		return p.fullProccess(r)
 	}
 
-	return nil
+	if p.searchQuery.query.attribute != "" {
+		p.attributeProcess(r)
+	}
+
+	return p.tagsProcess(r)
 }
 
 func (p *parser) fullProccess(r *bufio.Reader) error {
@@ -93,6 +97,46 @@ func (p *parser) fullProccess(r *bufio.Reader) error {
 		buf = buf[:n]
 
 		p.parseFullDocument(buf)
+	}
+
+	return nil
+}
+
+func (p *parser) tagsProcess(r *bufio.Reader) error {
+	buf := make([]byte, 0, 4*1024)
+
+	for {
+		n, err := r.Read(buf[:cap(buf)])
+		if err != nil {
+			if err == io.EOF {
+				break
+			}
+			return err
+		}
+
+		buf = buf[:n]
+
+		p.processTags(buf)
+	}
+
+	return nil
+}
+
+func (p *parser) attributeProcess(r *bufio.Reader) error {
+	buf := make([]byte, 0, 4*1024)
+
+	for {
+		n, err := r.Read(buf[:cap(buf)])
+		if err != nil {
+			if err == io.EOF {
+				break
+			}
+			return err
+		}
+
+		buf = buf[:n]
+
+		p.processAttribute(buf)
 	}
 
 	return nil
