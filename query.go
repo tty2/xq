@@ -92,6 +92,10 @@ func (q *query) getPath() []step {
 
 	path := strings.Split(q.request, ".")
 
+	if len(path) > 0 && path[0] == "" {
+		path = path[1:]
+	}
+
 	steps := []step{}
 	for i := range path {
 		steps = append(steps, getStep(path[i]))
@@ -113,12 +117,14 @@ func getStep(s string) step {
 		}
 		if s[i] == '[' {
 			name = s[:i]
+			inBrackets = true
 		}
 	}
 
 	count, err := strconv.Atoi(string(num))
 	if err != nil {
 		count = -1
+		name = s[:]
 	}
 
 	return step{
