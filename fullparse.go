@@ -13,7 +13,6 @@ import (
 )
 
 func (p *parser) parseFullDocument(chunk []byte) {
-
 	for i := range chunk {
 		// skip carriage return and new line from data in order do not duplicate with created ones by parser
 		if p.SkipData && (chunk[i] == ' ' || chunk[i] == '\t') {
@@ -71,6 +70,7 @@ func (p *parser) printTag() {
 	}
 	if p.CurrentTag.Bytes[1] == '!' || p.CurrentTag.Bytes[1] == '?' { // service tag, comment or cdata
 		fmt.Printf("%s\n", append(bytes.Repeat([]byte(" "), p.IndentItemSize*p.Indentation), p.CurrentTag.Bytes...))
+
 		return
 	}
 
@@ -119,6 +119,7 @@ func (p *parser) colorizeTag() []byte {
 				attr.NextIsQuote = false
 				attr.InsideValue = true
 			}
+
 			continue
 		}
 		if attr.InsideValue {
@@ -137,6 +138,7 @@ func (p *parser) colorizeTag() []byte {
 			} else {
 				attr.Value = append(attr.Value, p.CurrentTag.Bytes[i])
 			}
+
 			continue
 		}
 		if p.CurrentTag.Bytes[i] == ' ' {
@@ -145,10 +147,12 @@ func (p *parser) colorizeTag() []byte {
 		if p.CurrentTag.Bytes[i] == '=' { // value of attribute
 			attr.NextIsQuote = true
 			coloredTag = append(coloredTag, []byte(white)...)
+
 			continue
 			// i != ln-3 in order do not colorize `/` sign inside an empty tag in case like this `<...attr="value" />`
 		} else if p.CurrentTag.Bytes[i] == '/' && i == ln-2 { // end attribute value
 			coloredTag = append(coloredTag, p.CurrentTag.Bytes[i])
+
 			continue
 		}
 		attr.Name = append(attr.Name, p.CurrentTag.Bytes[i])

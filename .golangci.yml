@@ -1,5 +1,5 @@
 name:
-  shooting GolangCI-Lint Configuration
+  GolangCI-Lint Configuration
 run:
   deadline: 30m
   skip-dirs:
@@ -26,15 +26,11 @@ linters-settings:
   govet:
     # report about shadowed variables
 
-  golint:
-    # minimal confidence for issues, default is 0.8
-    min-confidence: 0
+  revive:
+
   goimports:
     # put imports beginning with prefix after 3rd-party packages;
     # it's a comma-separated list of prefixes
-  gocyclo:
-    # minimal code complexity to report, 30 by default (but we recommend 10-20)
-    min-complexity: 10
   dupl:
     # tokens count to trigger issue, 150 by default
     threshold: 100
@@ -62,93 +58,176 @@ linters-settings:
 
     # Which checks should be disabled; can't be combined with 'enabled-checks'; default is empty
     disabled-checks:
-      - wrapperFunc
       - hugeParam
-      - rangeValCopy
-      - unnamedResult
 
 linters:
   # Disabling all linters to manually specify linters we want to run
   disable-all: true
 
   enable:
-# TODO: Enable all required linters:
-# REQUIRED:
-    - goimports           # Goimports does everything that gofmt does. Additionally it checks unused imports
-
-    - unparam             # Reports unused function parameters
-
-    - ineffassign         # Detects when assignments to existing variables are not used
+# Enabled by default:
+    - deadcode            # Finds unused code
 
     - errcheck            # Errcheck is a program for checking for unchecked errors in go programs. These unchecked errors can be critical bugs in some cases
 
-    - nakedret            # Finds naked returns in functions greater than a specified function length
+    - gosimple            # Linter for Go source code that specializes in simplifying a code
 
     - govet               # Vet examines Go source code and reports suspicious constructs, such as Printf calls whose arguments do not align with the format string
 
-    # - scopelint           # Scopelint checks for unpinned variables in go programs
+    - ineffassign         # Detects when assignments to existing variables are not used
 
-    - exportloopref
-
-#    - gocyclo             # Computes and checks the cyclomatic complexity of functions
-
-    - megacheck           # Run staticcheck, gosimple and unused, sharing work
-
-    - stylecheck          # Is a replacement for golint
-
-    - gocritic            # The most opinionated Go source code linter
-
-    - prealloc            # Finds slice declarations that could potentially be preallocated
-
-    - varcheck            # Finds unused global variables and constants
+    - staticcheck         # Staticcheck is a go vet on steroids, applying a ton of static analysis checks
 
     - structcheck         # Finds an unused struct fields
 
-    - deadcode            # Finds unused code
-
-    - unconvert           # Remove unnecessary type conversions
-
-    - goconst             # Finds repeated strings that could be replaced by a constant
-
     - typecheck           # Syntactic and semantic analysis similar to the Go compiler
+
+    - unused              # Checks Go code for unused constants, variables, functions and types
+
+    - varcheck            # Finds unused global variables and constants
+
+
+# Disabled by default
+
+    - asciicheck		      # Simple linter to check that your code does not contain non-ASCII identifiers
+
+    # - bodyclose           # checks whether HTTP response body is closed successfully
+                            # Reason: it's a bit stupid and can't understand that body can be closed in another function
+
+    # - cyclop              # checks function and package cyclomatic complexity
+
+    - depguard            # Go linter that checks if package imports are in a list of acceptable packages
+
+    - dogsled             # Checks assignments with too many blank identifiers (e.g. x, , , _, := f())
+
+    # - dupl                # Tool for code clone detection
+
+    - durationcheck       # check for two durations multiplied together
+
+    - errname             # Checks that sentinel errors are prefixed with the Err and error types are suffixed with the Error
+
+    # - errorlint           # errorlint is a linter for that can be used to find code that will cause problems with the error wrapping scheme introduced in Go 1.13.
+    # TODO: check if it's worth it
+
+    - exhaustive          # check exhaustiveness of enum switch statements
+
+    # - exhaustivestruct    # Checks if all struct's fields are initialized
+
+    - exportloopref       # checks for pointers to enclosing loop variables
+
+    - forbidigo           # Forbids identifiers
+
+    - forcetypeassert     # finds forced type assertions
+
+    # - funlen              # Tool for detection of long functions
+
+    - gci                 # Gci control golang package import order and make it always deterministic.
+
+    - gochecknoglobals    # Checks that no globals are present in Go code
 
     - gochecknoinits      # Checks that no init functions are present in Go code
 
-#    - gochecknoglobals    # Checks that no globals are present in Go code
+    # - gocognit            # Computes and checks the cognitive complexity of functions
+
+    - goconst             # Finds repeated strings that could be replaced by a constant
+
+    - gocritic            # The most opinionated Go source code linter
+
+    # - gocyclo             # Computes and checks the cyclomatic complexity of functions
+
+    - godot               # Check if comments end in a period
+
+    # - goerr113            # Golang linter to check the errors handling expressions
+    # # TODO: check if it's worth it
+
+    - gofmt               # Gofmt checks whether code was gofmt-ed. By default this tool runs with -s option to check for code simplification
+
+    - gofumpt             # Gofumpt checks whether code was gofumpt-ed.
+
+    - goheader            # Checks is file header matches to pattern
+
+    - goimports           # Goimports does everything that gofmt does. Additionally it checks unused imports
+
+    # - gomnd               # An analyzer to detect magic numbers.
+    # TODO: the good one. Turn on it in future.
+
+    - gomoddirectives     # Manage the use of 'replace', 'retract', and 'excludes' directives in go.mod.
+
+    - gomodguard          # Allow and block list linter for direct Go module dependencies. This is different from depguard where there are different block types for example version constraints and module recommendations.
+
+    - goprintffuncname	  # Checks that printf-like functions are named with f at the end
 
     - gosec               # Inspects source code for security problems
 
-    - golint              # Golint differs from gofmt. Gofmt reformats Go source code, whereas golint prints out style mistakes
 
-    - misspell            # Finds commonly misspelled English words in comments
-
-#    - dupl                # Tool for code clone detection
+    - importas            # Enforces consistent import aliases
 
     - lll                 # Reports long lines
 
-# OPTIONAL:
+    - makezero            # Finds slice declarations with non-zero initial length
+
+    - misspell            # Finds commonly misspelled English words in comments
+
+    - nakedret            # Finds naked returns in functions greater than a specified function length
+
+    - nestif              # Reports deeply nested if statements
+
+    - nilerr              # Finds the code that returns nil even if it checks that the error is not nil.
+
+    - nlreturn            # nlreturn checks for a new line before return and branch statements to increase code clarity
+
+    # - noctx               # noctx finds sending http request without context.Context
+    # TODO: the good one. Turn on in future.
+
+    - prealloc            # Finds slice declarations that could potentially be preallocated
+
+    - predeclared         # find code that shadows one of Go's predeclared identifiers
+
+    - promlinter          # Check Prometheus metrics naming via promlint
+
+    - revive              # Fast, configurable, extensible, flexible, and beautiful linter for Go. Drop-in replacement of golint.
+
+    - rowserrcheck        # checks whether Err of rows is checked successfully
+
+    - sqlclosecheck       # Checks that sql.Rows and sql.Stmt are closed.
+
+    - stylecheck          # Stylecheck is a replacement for golint
+
+
+    - thelper             # thelper detects golang test helpers without t.Helper() call and checks the consistency of test helpers
+
+    - tparallel           # tparallel detects inappropriate usage of t.Parallel() method in your Go test codes
+
+    - unconvert           # Remove unnecessary type conversions
+
+    - unparam             # Reports unused function parameters
+
+    - wastedassign        # wastedassign finds wasted assignment statements.
+
+    - whitespace          # Tool for detection of leading and trailing whitespace
+
+    # - wrapcheck           # Checks that errors returned from external packages are wrapped
+
+    # - wsl                 # Whitespace Linter - Forces you to use empty lines!
+
+# Turn them on when there is nothing to do.
+
+    # - godox               # Tool for detection of FIXME, TODO and other comment keywords
+
+# CONSIDER TO TURN ON:
+
 
 # NOT NEEDED:
+   
+    # - nolintlint          # Reports ill-formed or insufficient nolint directives
 
-#    - staticcheck         # Staticcheck is a go vet on steroids, applying a ton of static analysis checks
-                           # Reason: staticcheck has been merged into the megacheck tool.
+    # - paralleltest        # paralleltest detects missing usage of t.Parallel() method in your Go test
 
-#    - unused              # Checks Go code for unused constants, variables, functions and types
-                           # Reason: unused has been merged into the megacheck tool.
+    # - tagliatelle         # Checks the struct tags.
 
-#    - depguard            # Go linter that checks if package imports are in a list of acceptable packages
-                           # Reason: the blacklist is absent
+    # - testpackage         # linter that makes you use a separate _test package
 
-#    - gofmt               # Gofmt checks whether code was gofmt-ed. By default this tool runs with -s option to check for code simplification
-                           # Reason: goimports is used instead
-
-#    - gosimple            # Linter for Go source code that specializes in simplifying a code
-                           # Reason: gosimple has been merged into the staticcheck tool.
-
-#    - interfacer          # Linter that suggests narrower interface types
-                           # Reason: from https://github.com/mvdan/interfacer: "A tool that suggests interfaces is prone
-                           # to bad suggestions, so its usefulness in real code is limited. This tool will remain
-                           # available as a proof of concept, and for others to examine and learn from."
+    # - ifshort             # Checks that your code uses short syntax for if-statements whenever possible
 
 issues:
   # Independently from option `exclude` we use default exclude patterns,
@@ -158,30 +237,29 @@ issues:
   exclude-use-default: false
 
   exclude-rules:
-    # We don't need it from gosec, because we have errcheck
-    - linters:
-        - gosec
-      text: "G104:"
+  #   # We don't need it from gosec, because we have errcheck
+  #   - linters:
+  #       - gosec
+  #     text: "G104:"
 
-    # Currently this check gives us too much false positives
-    - linters:
-        - gosec
-      text: "G201:"
+  #   # Currently this check gives us too much false positives
+  #   - linters:
+  #       - gosec
+  #     text: "G201:"
 
-    # Currently this check gives us too much false positives
-    - linters:
-        - gosec
-      text: "G202:"
+  # # Currently this check gives us too much false positives
+  # - linters:
+  #     - gosec
+  #   text: "G202:"
 
-    # Currently it's always complaining to the lack for package commit even if it exists.
-    - linters:
-        - golint
-      text: "should have a package comment, unless it's in another file for this package"
+    # - path: _test\.go
+    #   linters:
+    #     - funlen
 
-    # It's ok to have not so secure code in tests
-    - path: _test\.go
+    - path: tests/*
       linters:
-        - gosec
+        - gochecknoglobals
+        - gocritic
 
   # Maximum issues count per one linter. Set to 0 to disable. Default is 50.
   max-issues-per-linter: 0

@@ -31,3 +31,25 @@ func TestGetStep(t *testing.T) {
 		rq.Equal(3, res.count)
 	})
 }
+
+func TestSeparateAttribute(t *testing.T) {
+	t.Parallel()
+
+	t.Run("ok", func(t *testing.T) {
+		t.Parallel()
+		rq := require.New(t)
+		q := query{
+			request: "tag1.tag2#attr",
+		}
+
+		q.path = q.getPath()
+
+		rq.Len(q.path, 2)
+
+		res := q.separateAttribute()
+
+		rq.Len(res, 2)
+		rq.Equal("tag2", res[0])
+		rq.Equal("attr", res[1])
+	})
+}
