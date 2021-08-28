@@ -35,7 +35,7 @@ func parseQuery() query {
 		return q
 	}
 
-	sa := q.getAttribute()
+	sa := q.separateAttribute()
 	if len(sa) == 1 {
 		return q
 	}
@@ -82,6 +82,7 @@ func getQuery() query {
 			request: ".",
 		}
 	}
+
 	return q
 }
 
@@ -133,6 +134,6 @@ func getStep(s string) step {
 	}
 }
 
-func (q *query) getAttribute() []string {
+func (q *query) separateAttribute() []string {
 	return strings.Split(q.path[len(q.path)-1].name, "#")
 }

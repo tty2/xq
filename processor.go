@@ -91,6 +91,7 @@ func (p *parser) fullProcess(r *bufio.Reader) error {
 			if err == io.EOF {
 				break
 			}
+
 			return err
 		}
 
@@ -111,6 +112,7 @@ func (p *parser) tagsProcess(r *bufio.Reader) error {
 			if err == io.EOF {
 				break
 			}
+
 			return err
 		}
 
@@ -131,6 +133,7 @@ func (p *parser) attributeProcess(r *bufio.Reader) error {
 			if err == io.EOF {
 				break
 			}
+
 			return err
 		}
 
