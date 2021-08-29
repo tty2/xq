@@ -20,6 +20,7 @@ func (p *parser) parseFullDocument(chunk []byte) {
 		}
 		if chunk[i] == newLine || chunk[i] == carriageReturn {
 			p.SkipData = true
+
 			continue
 		}
 		p.SkipData = false
@@ -45,7 +46,6 @@ func (p *parser) parseFullDocument(chunk []byte) {
 		}
 
 		if chunk[i] == openBracket {
-
 			p.InsideTag = true
 			p.CurrentTag = tag{
 				Bytes: []byte{chunk[i]},
@@ -53,6 +53,7 @@ func (p *parser) parseFullDocument(chunk []byte) {
 			p.CurrentTag.Brackets++
 
 			if len(p.Data) > 0 {
+				// nolint forbidigo: printf is executed on purpose here
 				fmt.Printf("%s\n", append(bytes.Repeat([]byte(" "), p.IndentItemSize*p.Indentation), p.Data...))
 				p.Data = []byte{}
 			}
@@ -64,6 +65,7 @@ func (p *parser) parseFullDocument(chunk []byte) {
 	}
 }
 
+// nolint forbidigo: printf in this method is executed on purpose
 func (p *parser) printTag() {
 	if len(p.CurrentTag.Bytes) < minTagSize {
 		log.Fatalf("tag size is too small = %d, tag is `%s`", len(p.CurrentTag.Bytes), p.CurrentTag.Bytes)

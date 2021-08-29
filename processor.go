@@ -76,7 +76,7 @@ func (p *parser) process(r *bufio.Reader) error {
 	}
 
 	if p.searchQuery.query.attribute != "" {
-		p.attributeProcess(r)
+		return p.attributeProcess(r)
 	}
 
 	return p.tagsProcess(r)
