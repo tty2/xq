@@ -125,7 +125,7 @@ func getStep(s string) step {
 	count, err := strconv.Atoi(string(num))
 	if err != nil {
 		count = -1
-		name = s[:]
+		name = s
 	}
 
 	return step{
