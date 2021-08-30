@@ -7,7 +7,8 @@ import (
 )
 
 func main() {
-	q := parseQuery()
+	q := getQuery()
+	q.parse()
 
 	p := newParser(q)
 
