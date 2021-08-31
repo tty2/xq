@@ -26,42 +26,6 @@ const (
 	empty
 )
 
-func parseQuery() query {
-	q := getQuery()
-
-	q.path = q.getPath()
-
-	if len(q.path) == 0 {
-		return q
-	}
-
-	sa := q.separateAttribute()
-	if len(sa) == 1 {
-		return q
-	}
-
-	q.path[len(q.path)-1].name = sa[0]
-
-	q.attribute = sa[1]
-
-	return q
-}
-
-func toTag(s string) int {
-	switch s {
-	case "tag":
-		return tags
-	case "value":
-		return tagValue
-	case "attribute":
-		return attr
-	case "aValue":
-		return attrValue
-	default:
-		return empty
-	}
-}
-
 func getQuery() query {
 	var q query
 	args := os.Args[1:]
@@ -84,6 +48,38 @@ func getQuery() query {
 	}
 
 	return q
+}
+
+func (q *query) parse() {
+	q.path = q.getPath()
+
+	if len(q.path) == 0 {
+		return
+	}
+
+	sa := q.separateAttribute()
+	if len(sa) == 1 {
+		return
+	}
+
+	q.path[len(q.path)-1].name = sa[0]
+
+	q.attribute = sa[1]
+}
+
+func toTag(s string) int {
+	switch s {
+	case "tag":
+		return tags
+	case "value":
+		return tagValue
+	case "attribute":
+		return attr
+	case "aValue":
+		return attrValue
+	default:
+		return empty
+	}
 }
 
 func (q *query) getPath() []step {
