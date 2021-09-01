@@ -27,7 +27,7 @@ const (
 )
 
 type searchQuery struct {
-	// count int
+	count int
 	// print bool
 	query query
 }
