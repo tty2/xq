@@ -135,7 +135,7 @@ func TestGetQuery(t *testing.T) {
 		q := getQuery()
 
 		rq.Equal(".tag1.tag2", q.request)
-		rq.Equal(tags, q.target)
+		rq.Equal(_tags, q.target)
 	})
 
 	t.Run("path only", func(t *testing.T) {
@@ -147,7 +147,7 @@ func TestGetQuery(t *testing.T) {
 		q := getQuery()
 
 		rq.Equal(".tag1.tag2", q.request)
-		rq.Equal(tags, q.target)
+		rq.Equal(_tags, q.target)
 	})
 }
 
@@ -158,7 +158,7 @@ func TestToTag(t *testing.T) {
 		t.Parallel()
 		rq := require.New(t)
 
-		rq.Equal(tags, toTag("tag"))
+		rq.Equal(_tags, toTag("tag"))
 	})
 
 	t.Run("value", func(t *testing.T) {
@@ -198,7 +198,7 @@ func TestParseQuery(t *testing.T) {
 		rq := require.New(t)
 
 		q := query{
-			target:  tags,
+			target:  _tags,
 			request: ".",
 		}
 
@@ -207,12 +207,12 @@ func TestParseQuery(t *testing.T) {
 		rq.Len(q.path, 0)
 	})
 
-	t.Run("tags only", func(t *testing.T) {
+	t.Run("_tags only", func(t *testing.T) {
 		t.Parallel()
 		rq := require.New(t)
 
 		q := query{
-			target:  tags,
+			target:  _tags,
 			request: ".tag1.tag2",
 		}
 
@@ -228,7 +228,7 @@ func TestParseQuery(t *testing.T) {
 		rq := require.New(t)
 
 		q := query{
-			target:  tags,
+			target:  _tags,
 			request: ".tag1.tag2#attr_name",
 		}
 

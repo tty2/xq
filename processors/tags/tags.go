@@ -1,9 +1,10 @@
 /*
-Package tagparser is responsible for parsing and printing tags data.
+Package tags is responsible for parsing and printing tags data.
 */
-package tagparser
+package tags
 
 import (
+	"bufio"
 	"errors"
 	"fmt"
 	"io"
@@ -31,11 +32,27 @@ type (
 	}
 )
 
-func (p *Parser) Process(chunk []byte) {
-	err := p.getTagsList(chunk)
-	if err == io.EOF {
-		p.printTagsInside()
+func (p *Parser) Process(r *bufio.Reader) error {
+	buf := make([]byte, 0, 4*1024)
+
+	for {
+		n, err := r.Read(buf[:cap(buf)])
+		if err != nil {
+			if err == io.EOF {
+				break
+			}
+
+			return err
+		}
+
+		buf = buf[:n]
+
+		p.process(buf)
 	}
+
+	p.printTagsInside()
+
+	return nil
 }
 
 func (p *Parser) printTagsInside() {
@@ -44,7 +61,7 @@ func (p *Parser) printTagsInside() {
 	}
 }
 
-func (p *Parser) getTagsList(chunk []byte) error {
+func (p *Parser) process(chunk []byte) error {
 	for i := range chunk {
 		if p.insideTag {
 			p.currentTag.bytes = append(p.currentTag.bytes, chunk[i])

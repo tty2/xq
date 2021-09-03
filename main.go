@@ -14,7 +14,9 @@ func main() {
 
 	r := bufio.NewReader(os.Stdin)
 
-	err := p.process(r)
+	proc := p.getProcessor()
+
+	err := proc.Process(r)
 	if err != nil {
 		log.Fatal(err)
 	}

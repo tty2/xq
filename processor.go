@@ -2,7 +2,10 @@ package main
 
 import (
 	"bufio"
-	"io"
+
+	"github.com/tty2/xq/processors/attributes"
+	"github.com/tty2/xq/processors/data"
+	"github.com/tty2/xq/processors/tags"
 )
 
 const (
@@ -25,6 +28,10 @@ const (
 
 	space = 32
 )
+
+type processor interface {
+	Process(r *bufio.Reader) error
+}
 
 type searchQuery struct {
 	count int
@@ -70,77 +77,11 @@ func newParser(q query) parser {
 	}
 }
 
-func (p *parser) process(r *bufio.Reader) error {
+func (p *parser) getProcessor() processor {
 	if len(p.searchQuery.query.path) == 0 {
-		return p.fullProcess(r)
+		return &data.Parser{}
+	} else if p.searchQuery.query.attribute != "" {
+		return &attributes.Parser{}
 	}
-
-	if p.searchQuery.query.attribute != "" {
-		return p.attributeProcess(r)
-	}
-
-	return p.tagsProcess(r)
-}
-
-func (p *parser) fullProcess(r *bufio.Reader) error {
-	buf := make([]byte, 0, 4*1024)
-
-	for {
-		n, err := r.Read(buf[:cap(buf)])
-		if err != nil {
-			if err == io.EOF {
-				break
-			}
-
-			return err
-		}
-
-		buf = buf[:n]
-
-		p.parseFullDocument(buf)
-	}
-
-	return nil
-}
-
-func (p *parser) tagsProcess(r *bufio.Reader) error {
-	buf := make([]byte, 0, 4*1024)
-
-	for {
-		n, err := r.Read(buf[:cap(buf)])
-		if err != nil {
-			if err == io.EOF {
-				break
-			}
-
-			return err
-		}
-
-		buf = buf[:n]
-
-		p.processTags(buf)
-	}
-
-	return nil
-}
-
-func (p *parser) attributeProcess(r *bufio.Reader) error {
-	buf := make([]byte, 0, 4*1024)
-
-	for {
-		n, err := r.Read(buf[:cap(buf)])
-		if err != nil {
-			if err == io.EOF {
-				break
-			}
-
-			return err
-		}
-
-		buf = buf[:n]
-
-		p.processAttribute(buf)
-	}
-
-	return nil
+	return &tags.Parser{}
 }
