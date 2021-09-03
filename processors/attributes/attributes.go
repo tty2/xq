@@ -1,4 +1,4 @@
-package attributeparser
+package attributes
 
 import (
 	"bufio"
