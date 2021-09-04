@@ -79,9 +79,12 @@ func newParser(q query) parser {
 
 func (p *parser) getProcessor() processor {
 	if len(p.searchQuery.query.path) == 0 {
-		return &data.Parser{}
+		return &data.Parser{
+			IndentItemSize: 2,
+		}
 	} else if p.searchQuery.query.attribute != "" {
 		return &attributes.Parser{}
 	}
+
 	return &tags.Parser{}
 }

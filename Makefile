@@ -5,8 +5,8 @@ lint: ## Run linters only.
 
 test: ## Run go tests for files with tests.
 	@echo -e "\033[2m→ Run tests for all files...\033[0m"
-	@if [ $$(cat fixtures/hashes.txt | sed -n 3p) = $$(cat fixtures/film.xml | go run main.go processor.go query.go fullparse.go tags.go attribute.go | md5sum | awk '{print $$1}') ]; then echo "PASSED"; else exit 125; fi
-	@if [ $$(cat fixtures/hashes.txt | sed -n 4p) = $$(cat fixtures/flat.xml | go run main.go processor.go query.go fullparse.go tags.go attribute.go | md5sum | awk '{print $$1}') ]; then echo "PASSED"; else exit 125; fi
+	@if [ $$(cat fixtures/hashes.txt | sed -n 3p) = $$(cat fixtures/film.xml | go run main.go processor.go query.go fullparse.go | md5sum | awk '{print $$1}') ]; then echo "PASSED"; else exit 125; fi
+	@if [ $$(cat fixtures/hashes.txt | sed -n 4p) = $$(cat fixtures/flat.xml | go run main.go processor.go query.go fullparse.go | md5sum | awk '{print $$1}') ]; then echo "PASSED"; else exit 125; fi
 
 beautify:
 	gofumpt -l -w $$(go list -f {{.Dir}} ./... | grep -v /vendor/)
