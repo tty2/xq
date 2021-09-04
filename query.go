@@ -19,7 +19,7 @@ type step struct {
 }
 
 const (
-	tags = iota
+	_tags = iota
 	tagValue
 	attr
 	attrValue
@@ -32,7 +32,7 @@ func getQuery() query {
 	switch len(args) {
 	case 1:
 		q = query{
-			target:  tags,
+			target:  _tags,
 			request: args[0],
 		}
 	case 2:
@@ -70,7 +70,7 @@ func (q *query) parse() {
 func toTag(s string) int {
 	switch s {
 	case "tag":
-		return tags
+		return _tags
 	case "value":
 		return tagValue
 	case "attribute":
