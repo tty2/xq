@@ -133,3 +133,12 @@ func getStep(s string) step {
 func (q *query) separateAttribute() []string {
 	return strings.Split(q.path[len(q.path)-1].name, "#")
 }
+
+func (q *query) getPathString() []string {
+	p := make([]string, len(q.path))
+	for i := range q.path {
+		p[i] = q.path[i].name
+	}
+
+	return p
+}

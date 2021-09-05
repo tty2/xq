@@ -35,7 +35,7 @@ const (
 )
 
 type (
-	Parser struct {
+	Processors struct {
 		CurrentTag     tag
 		Data           []byte
 		IndentItemSize int
@@ -60,7 +60,13 @@ type (
 	}
 )
 
-func (p *Parser) Process(r *bufio.Reader) error {
+func NewProcessor(indentationSize int) *Processors {
+	return &Processors{
+		IndentItemSize: indentationSize,
+	}
+}
+
+func (p *Processors) Process(r *bufio.Reader) error {
 	buf := make([]byte, 0, 4*1024)
 
 	for {
@@ -81,9 +87,9 @@ func (p *Parser) Process(r *bufio.Reader) error {
 	return nil
 }
 
-func (p *Parser) process(chunk []byte) {
+func (p *Processors) process(chunk []byte) {
 	for i := range chunk {
-		// skip carriage return and new line from data in order do not duplicate with created ones by parser
+		// skip carriage return and new line from data in order do not duplicate with created ones by Processors
 		if p.SkipData && (chunk[i] == ' ' || chunk[i] == '\t') {
 			continue
 		}
@@ -135,7 +141,7 @@ func (p *Parser) process(chunk []byte) {
 }
 
 // nolint forbidigo: printf in this method is executed on purpose
-func (p *Parser) printTag() {
+func (p *Processors) printTag() {
 	if len(p.CurrentTag.Bytes) < minTagSize {
 		log.Fatalf("tag size is too small = %d, tag is `%s`", len(p.CurrentTag.Bytes), p.CurrentTag.Bytes)
 	}
@@ -152,11 +158,11 @@ func (p *Parser) printTag() {
 	}
 }
 
-func (p *Parser) downIndent() {
+func (p *Processors) downIndent() {
 	p.Indentation--
 }
 
-func (p *Parser) colorizeTag() []byte {
+func (p *Processors) colorizeTag() []byte {
 	ln := len(p.CurrentTag.Bytes)
 
 	coloredTag := make([]byte, 0, p.Indentation+ln)

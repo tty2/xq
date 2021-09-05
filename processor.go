@@ -9,24 +9,7 @@ import (
 )
 
 const (
-	closeBracket = '>'
-	openBracket  = '<'
-
-	minTagSize = 3 // minimum tag size can be 3. as example <b>
-
-	red   = "\033[01;31m"
-	green = "\033[01;32m"
-	white = "\033[00m"
-
 	indentItemSize = 2
-
-	newLine        = 10 // '\n'
-	carriageReturn = 13 // '\r'
-
-	quote       = 39 // '
-	doubleQuote = 34 // "
-
-	space = 32
 )
 
 type processor interface {
@@ -34,8 +17,6 @@ type processor interface {
 }
 
 type searchQuery struct {
-	count int
-	// print bool
 	query query
 }
 
@@ -79,12 +60,13 @@ func newParser(q query) parser {
 
 func (p *parser) getProcessor() processor {
 	if len(p.searchQuery.query.path) == 0 {
-		return &data.Parser{
-			IndentItemSize: 2,
-		}
+		return data.NewProcessor(indentItemSize)
 	} else if p.searchQuery.query.attribute != "" {
-		return &attributes.Parser{}
+		return attributes.NewProcessor(
+			p.searchQuery.query.getPathString(),
+			p.searchQuery.query.attribute,
+		)
 	}
 
-	return &tags.Parser{}
+	return tags.NewProcessor(p.searchQuery.query.getPathString())
 }

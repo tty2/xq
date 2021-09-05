@@ -18,7 +18,7 @@ const (
 )
 
 type (
-	Parser struct {
+	Processor struct {
 		insideTag      bool
 		targetTagFound bool
 		index          int
@@ -32,7 +32,13 @@ type (
 	}
 )
 
-func (p *Parser) Process(r *bufio.Reader) error {
+func NewProcessor(path []string) *Processor {
+	return &Processor{
+		path: path,
+	}
+}
+
+func (p *Processor) Process(r *bufio.Reader) error {
 	buf := make([]byte, 0, 4*1024)
 
 	for {
@@ -55,13 +61,13 @@ func (p *Parser) Process(r *bufio.Reader) error {
 	return nil
 }
 
-func (p *Parser) printTagsInside() {
+func (p *Processor) printTagsInside() {
 	for i := range p.targetTagsList {
 		fmt.Println(p.targetTagsList[i])
 	}
 }
 
-func (p *Parser) process(chunk []byte) error {
+func (p *Processor) process(chunk []byte) error {
 	for i := range chunk {
 		if p.insideTag {
 			p.currentTag.bytes = append(p.currentTag.bytes, chunk[i])
