@@ -17,8 +17,8 @@ func TestGetStep(t *testing.T) {
 
 		res := getStep(tg)
 
-		rq.Equal(tg, res.name)
-		rq.Equal(-1, res.count)
+		rq.Equal(tg, res.Name)
+		rq.Equal(-1, res.Index)
 	})
 
 	t.Run("with index", func(t *testing.T) {
@@ -28,8 +28,8 @@ func TestGetStep(t *testing.T) {
 
 		res := getStep(tg)
 
-		rq.Equal("tag_name", res.name)
-		rq.Equal(3, res.count)
+		rq.Equal("tag_name", res.Name)
+		rq.Equal(3, res.Index)
 	})
 }
 
@@ -83,12 +83,12 @@ func TestGetPath(t *testing.T) {
 		st := q.getPath()
 
 		rq.Len(st, 3)
-		rq.Equal("tag1", st[0].name)
-		rq.Equal(-1, st[0].count)
-		rq.Equal("tag2", st[1].name)
-		rq.Equal(-1, st[1].count)
-		rq.Equal("tag3", st[2].name)
-		rq.Equal(-1, st[2].count)
+		rq.Equal("tag1", st[0].Name)
+		rq.Equal(-1, st[0].Index)
+		rq.Equal("tag2", st[1].Name)
+		rq.Equal(-1, st[1].Index)
+		rq.Equal("tag3", st[2].Name)
+		rq.Equal(-1, st[2].Index)
 	})
 
 	t.Run("leading dot", func(t *testing.T) {
@@ -102,12 +102,12 @@ func TestGetPath(t *testing.T) {
 		st := q.getPath()
 
 		rq.Len(st, 3)
-		rq.Equal("tag1", st[0].name)
-		rq.Equal(-1, st[0].count)
-		rq.Equal("tag2", st[1].name)
-		rq.Equal(-1, st[1].count)
-		rq.Equal("tag3", st[2].name)
-		rq.Equal(-1, st[2].count)
+		rq.Equal("tag1", st[0].Name)
+		rq.Equal(-1, st[0].Index)
+		rq.Equal("tag2", st[1].Name)
+		rq.Equal(-1, st[1].Index)
+		rq.Equal("tag3", st[2].Name)
+		rq.Equal(-1, st[2].Index)
 	})
 }
 
@@ -219,8 +219,8 @@ func TestParseQuery(t *testing.T) {
 		q.parse()
 
 		rq.Len(q.path, 2)
-		rq.Equal("tag1", q.path[0].name)
-		rq.Equal("tag2", q.path[1].name)
+		rq.Equal("tag1", q.path[0].Name)
+		rq.Equal("tag2", q.path[1].Name)
 	})
 
 	t.Run("with attribute", func(t *testing.T) {
@@ -235,8 +235,8 @@ func TestParseQuery(t *testing.T) {
 		q.parse()
 
 		rq.Len(q.path, 2)
-		rq.Equal("tag1", q.path[0].name)
-		rq.Equal("tag2", q.path[1].name)
+		rq.Equal("tag1", q.path[0].Name)
+		rq.Equal("tag2", q.path[1].Name)
 		rq.Equal("attr_name", q.attribute)
 	})
 }

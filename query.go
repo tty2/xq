@@ -4,18 +4,15 @@ import (
 	"os"
 	"strconv"
 	"strings"
+
+	"github.com/tty2/xq/internal/domain"
 )
 
 type query struct {
 	target    int
 	request   string
-	path      []step
+	path      []domain.Step
 	attribute string
-}
-
-type step struct {
-	name  string
-	count int
 }
 
 const (
@@ -62,7 +59,7 @@ func (q *query) parse() {
 		return
 	}
 
-	q.path[len(q.path)-1].name = sa[0]
+	q.path[len(q.path)-1].Name = sa[0]
 
 	q.attribute = sa[1]
 }
@@ -82,9 +79,9 @@ func toTag(s string) int {
 	}
 }
 
-func (q *query) getPath() []step {
+func (q *query) getPath() []domain.Step {
 	if q.request == "." {
-		return []step{}
+		return []domain.Step{}
 	}
 
 	path := strings.Split(q.request, ".")
@@ -93,7 +90,7 @@ func (q *query) getPath() []step {
 		path = path[1:]
 	}
 
-	steps := []step{}
+	steps := []domain.Step{}
 	for i := range path {
 		steps = append(steps, getStep(path[i]))
 	}
@@ -101,7 +98,7 @@ func (q *query) getPath() []step {
 	return steps
 }
 
-func getStep(s string) step {
+func getStep(s string) domain.Step {
 	var name string
 	var inBrackets bool
 	var num []byte
@@ -124,21 +121,12 @@ func getStep(s string) step {
 		name = s
 	}
 
-	return step{
-		name:  name,
-		count: count,
+	return domain.Step{
+		Name:  name,
+		Index: count,
 	}
 }
 
 func (q *query) separateAttribute() []string {
-	return strings.Split(q.path[len(q.path)-1].name, "#")
-}
-
-func (q *query) getPathString() []string {
-	p := make([]string, len(q.path))
-	for i := range q.path {
-		p[i] = q.path[i].name
-	}
-
-	return p
+	return strings.Split(q.path[len(q.path)-1].Name, "#")
 }

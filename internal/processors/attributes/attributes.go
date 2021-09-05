@@ -1,20 +1,25 @@
+/*
+Package tags is responsible for parsing and printing attributes data.
+*/
 package attributes
 
 import (
 	"bufio"
 	"fmt"
 	"io"
+
+	"github.com/tty2/xq/internal/domain"
 )
 
 type (
 	Processor struct {
 		targetAttributesList []string
-		path                 []string
+		path                 []domain.Step
 		attribute            string
 	}
 )
 
-func NewProcessor(path []string, attribute string) *Processor {
+func NewProcessor(path []domain.Step, attribute string) *Processor {
 	return &Processor{
 		path:      path,
 		attribute: attribute,

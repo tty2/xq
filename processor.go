@@ -3,9 +3,9 @@ package main
 import (
 	"bufio"
 
-	"github.com/tty2/xq/processors/attributes"
-	"github.com/tty2/xq/processors/data"
-	"github.com/tty2/xq/processors/tags"
+	"github.com/tty2/xq/internal/processors/attributes"
+	"github.com/tty2/xq/internal/processors/data"
+	"github.com/tty2/xq/internal/processors/tags"
 )
 
 const (
@@ -63,10 +63,10 @@ func (p *parser) getProcessor() processor {
 		return data.NewProcessor(indentItemSize)
 	} else if p.searchQuery.query.attribute != "" {
 		return attributes.NewProcessor(
-			p.searchQuery.query.getPathString(),
+			p.searchQuery.query.path,
 			p.searchQuery.query.attribute,
 		)
 	}
 
-	return tags.NewProcessor(p.searchQuery.query.getPathString())
+	return tags.NewProcessor(p.searchQuery.query.path)
 }

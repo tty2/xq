@@ -9,6 +9,7 @@ import (
 	"fmt"
 	"io"
 
+	"github.com/tty2/xq/internal/domain"
 	"github.com/tty2/xq/pkg/slice"
 )
 
@@ -22,7 +23,7 @@ type (
 		insideTag      bool
 		targetTagFound bool
 		index          int
-		path           []string
+		path           []domain.Step
 		currentTag     tag
 		targetTagsList []string
 	}
@@ -32,7 +33,7 @@ type (
 	}
 )
 
-func NewProcessor(path []string) *Processor {
+func NewProcessor(path []domain.Step) *Processor {
 	return &Processor{
 		path: path,
 	}
@@ -90,7 +91,7 @@ func (p *Processor) process(chunk []byte) error {
 					continue
 				}
 
-				if tagName != p.path[p.index] {
+				if tagName != p.path[p.index].Name {
 					return errors.New("incorrect tag name in path")
 				}
 
