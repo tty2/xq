@@ -13,29 +13,18 @@ import (
 	"fmt"
 	"io"
 	"log"
+
+	"github.com/tty2/xq/internal/domain/color"
+	"github.com/tty2/xq/internal/domain/symbol"
 )
 
 const (
-	closeBracket = '>'
-	openBracket  = '<'
-
 	minTagSize = 3 // minimum tag size can be 3. as example <b>
-
-	red   = "\033[01;31m"
-	green = "\033[01;32m"
-	white = "\033[00m"
-
-	newLine        = 10 // '\n'
-	carriageReturn = 13 // '\r'
-
-	quote       = 39 // '
-	doubleQuote = 34 // "
-
-	space = 32
 )
 
 type (
-	Processors struct {
+	// Processor is a data processor. Keeps needed attributes to process data, colorize and print it.
+	Processor struct {
 		CurrentTag     tag
 		Data           []byte
 		IndentItemSize int
@@ -60,13 +49,15 @@ type (
 	}
 )
 
-func NewProcessor(indentationSize int) *Processors {
-	return &Processors{
+// NewProcessor creates a new Processor with needed attributes.
+func NewProcessor(indentationSize int) *Processor {
+	return &Processor{
 		IndentItemSize: indentationSize,
 	}
 }
 
-func (p *Processors) Process(r *bufio.Reader) error {
+// Process reads the data from `r` reader and processes it.
+func (p *Processor) Process(r *bufio.Reader) error {
 	buf := make([]byte, 0, 4*1024)
 
 	for {
@@ -87,13 +78,13 @@ func (p *Processors) Process(r *bufio.Reader) error {
 	return nil
 }
 
-func (p *Processors) process(chunk []byte) {
+func (p *Processor) process(chunk []byte) {
 	for i := range chunk {
-		// skip carriage return and new line from data in order do not duplicate with created ones by Processors
+		// skip carriage return and new line from data in order do not duplicate with created ones by Processor
 		if p.SkipData && (chunk[i] == ' ' || chunk[i] == '\t') {
 			continue
 		}
-		if chunk[i] == newLine || chunk[i] == carriageReturn {
+		if chunk[i] == symbol.NewLine || chunk[i] == symbol.CarriageReturn {
 			p.SkipData = true
 
 			continue
@@ -103,7 +94,7 @@ func (p *Processors) process(chunk []byte) {
 		if p.InsideTag {
 			p.CurrentTag.Bytes = append(p.CurrentTag.Bytes, chunk[i])
 
-			if chunk[i] == closeBracket {
+			if chunk[i] == symbol.CloseBracket {
 				p.CurrentTag.Brackets--
 
 				if p.CurrentTag.Brackets > 0 {
@@ -112,15 +103,15 @@ func (p *Processors) process(chunk []byte) {
 
 				p.InsideTag = false
 				p.printTag()
-				p.SkipData = true // skip if there are empty symbols beeween close tag and new data
-			} else if chunk[i] == openBracket {
+				p.SkipData = true // skip if there are empty symbol beeween close tag and new data
+			} else if chunk[i] == symbol.OpenBracket {
 				p.CurrentTag.Brackets++
 			}
 
 			continue
 		}
 
-		if chunk[i] == openBracket {
+		if chunk[i] == symbol.OpenBracket {
 			p.InsideTag = true
 			p.CurrentTag = tag{
 				Bytes: []byte{chunk[i]},
@@ -141,7 +132,7 @@ func (p *Processors) process(chunk []byte) {
 }
 
 // nolint forbidigo: printf in this method is executed on purpose
-func (p *Processors) printTag() {
+func (p *Processor) printTag() {
 	if len(p.CurrentTag.Bytes) < minTagSize {
 		log.Fatalf("tag size is too small = %d, tag is `%s`", len(p.CurrentTag.Bytes), p.CurrentTag.Bytes)
 	}
@@ -158,11 +149,11 @@ func (p *Processors) printTag() {
 	}
 }
 
-func (p *Processors) downIndent() {
+func (p *Processor) downIndent() {
 	p.Indentation--
 }
 
-func (p *Processors) colorizeTag() []byte {
+func (p *Processor) colorizeTag() []byte {
 	ln := len(p.CurrentTag.Bytes)
 
 	coloredTag := make([]byte, 0, p.Indentation+ln)
@@ -183,7 +174,7 @@ func (p *Processors) colorizeTag() []byte {
 
 	coloredTag = append(coloredTag, bytes.Repeat([]byte(" "), p.IndentItemSize*p.Indentation)...) // add indentation
 	coloredTag = append(coloredTag, p.CurrentTag.Bytes[:startName]...)                            // add open bracket
-	coloredTag = append(coloredTag, []byte(red)...)                                               // add red color
+	coloredTag = append(coloredTag, []byte(color.Red)...)                                         // add red color
 	coloredTag = append(coloredTag, p.CurrentTag.Bytes[startName:endName]...)                     // tag name
 
 	attr := attribute{
@@ -191,7 +182,7 @@ func (p *Processors) colorizeTag() []byte {
 	}
 	for i := endName; i < ln-1; i++ {
 		if attr.NextIsQuote {
-			if isQuote(p.CurrentTag.Bytes[i]) {
+			if symbol.IsQuote(p.CurrentTag.Bytes[i]) {
 				attr.Quote = p.CurrentTag.Bytes[i]
 				attr.NextIsQuote = false
 				attr.InsideValue = true
@@ -202,10 +193,10 @@ func (p *Processors) colorizeTag() []byte {
 		if attr.InsideValue {
 			if p.CurrentTag.Bytes[i] == attr.Quote && attr.Value[len(attr.Value)-1] != '\\' {
 				attr.InsideValue = false
-				coloredTag = append(coloredTag, space)
-				coloredTag = append(coloredTag, []byte(green)...)
+				coloredTag = append(coloredTag, symbol.Space)
+				coloredTag = append(coloredTag, []byte(color.Green)...)
 				coloredTag = append(coloredTag, attr.Name...)
-				coloredTag = append(coloredTag, []byte(white)...)
+				coloredTag = append(coloredTag, []byte(color.White)...)
 				coloredTag = append(coloredTag, '=', attr.Quote)
 				coloredTag = append(coloredTag, attr.Value...)
 				coloredTag = append(coloredTag, attr.Quote)
@@ -223,7 +214,7 @@ func (p *Processors) colorizeTag() []byte {
 		}
 		if p.CurrentTag.Bytes[i] == '=' { // value of attribute
 			attr.NextIsQuote = true
-			coloredTag = append(coloredTag, []byte(white)...)
+			coloredTag = append(coloredTag, []byte(color.White)...)
 
 			continue
 			// i != ln-3 in order do not colorize `/` sign inside an empty tag in case like this `<...attr="value" />`
@@ -234,12 +225,8 @@ func (p *Processors) colorizeTag() []byte {
 		}
 		attr.Name = append(attr.Name, p.CurrentTag.Bytes[i])
 	}
-	coloredTag = append(coloredTag, []byte(white)...)
+	coloredTag = append(coloredTag, []byte(color.White)...)
 	coloredTag = append(coloredTag, p.CurrentTag.Bytes[ln-1]) // add close bracket
 
 	return coloredTag
-}
-
-func isQuote(s byte) bool {
-	return s == quote || s == doubleQuote
 }

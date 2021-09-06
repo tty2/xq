@@ -9,19 +9,10 @@ import (
 )
 
 type query struct {
-	target    int
 	request   string
 	path      []domain.Step
 	attribute string
 }
-
-const (
-	_tags = iota
-	tagValue
-	attr
-	attrValue
-	empty
-)
 
 func getQuery() query {
 	var q query
@@ -29,17 +20,14 @@ func getQuery() query {
 	switch len(args) {
 	case 1:
 		q = query{
-			target:  _tags,
 			request: args[0],
 		}
 	case 2:
 		q = query{
-			target:  toTag(args[0]),
 			request: args[1],
 		}
 	default:
 		q = query{
-			target:  empty,
 			request: ".",
 		}
 	}
@@ -62,21 +50,6 @@ func (q *query) parse() {
 	q.path[len(q.path)-1].Name = sa[0]
 
 	q.attribute = sa[1]
-}
-
-func toTag(s string) int {
-	switch s {
-	case "tag":
-		return _tags
-	case "value":
-		return tagValue
-	case "attribute":
-		return attr
-	case "aValue":
-		return attrValue
-	default:
-		return empty
-	}
 }
 
 func (q *query) getPath() []domain.Step {

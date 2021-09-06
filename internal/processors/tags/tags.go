@@ -10,20 +10,16 @@ import (
 	"io"
 
 	"github.com/tty2/xq/internal/domain"
+	"github.com/tty2/xq/internal/domain/symbol"
 	"github.com/tty2/xq/pkg/slice"
 )
 
-const (
-	closeBracket = '>'
-	openBracket  = '<'
-)
-
 type (
+	// Processor is a tag processor. Keeps needed attributes to process data and handle tag data.
 	Processor struct {
 		insideTag      bool
-		targetTagFound bool
-		index          int
-		path           []domain.Step
+		queryPath      []domain.Step
+		currentPath    []string
 		currentTag     tag
 		targetTagsList []string
 	}
@@ -33,12 +29,14 @@ type (
 	}
 )
 
+// NewProcessor creates a new Processor with needed attributes.
 func NewProcessor(path []domain.Step) *Processor {
 	return &Processor{
-		path: path,
+		queryPath: path,
 	}
 }
 
+// Process reads the data from `r` reader and processes it.
 func (p *Processor) Process(r *bufio.Reader) error {
 	buf := make([]byte, 0, 4*1024)
 
@@ -54,7 +52,10 @@ func (p *Processor) Process(r *bufio.Reader) error {
 
 		buf = buf[:n]
 
-		p.process(buf)
+		err = p.process(buf)
+		if err != nil {
+			return err
+		}
 	}
 
 	p.printTagsInside()
@@ -64,7 +65,7 @@ func (p *Processor) Process(r *bufio.Reader) error {
 
 func (p *Processor) printTagsInside() {
 	for i := range p.targetTagsList {
-		fmt.Println(p.targetTagsList[i])
+		fmt.Println(p.targetTagsList[i]) // nolint forbidigo: the purpose of the function is print to stdout
 	}
 }
 
@@ -73,47 +74,32 @@ func (p *Processor) process(chunk []byte) error {
 		if p.insideTag {
 			p.currentTag.bytes = append(p.currentTag.bytes, chunk[i])
 
-			if chunk[i] == closeBracket {
-				p.insideTag = false
-
-				tagName, err := getTagName(p.currentTag.bytes)
-				if err != nil {
-					return err
-				}
-
-				if p.targetTagFound {
-					if !slice.ContainsString(p.targetTagsList, tagName) {
-
-						continue
-					}
-					p.targetTagsList = append(p.targetTagsList, tagName)
-
-					continue
-				}
-
-				if tagName != p.path[p.index].Name {
-					return errors.New("incorrect tag name in path")
-				}
-
-				p.index++
-
-				if len(p.path) > p.index {
-					continue
-				}
-
-				p.targetTagFound = true
+			if chunk[i] != symbol.CloseBracket {
+				continue
 			}
 
-			continue
+			p.insideTag = false
+
+			tagName, err := getTagName(p.currentTag.bytes)
+			if err != nil {
+				return err
+			}
+
+			if domain.PathsMatch(p.queryPath, p.currentPath) {
+				if slice.ContainsString(p.targetTagsList, tagName) {
+					continue
+				}
+				p.targetTagsList = append(p.targetTagsList, tagName)
+
+				continue
+			}
 		}
 
-		if chunk[i] == openBracket {
+		if chunk[i] == symbol.OpenBracket {
 			p.insideTag = true
 			p.currentTag = tag{
 				bytes: []byte{chunk[i]},
 			}
-
-			continue
 		}
 	}
 
@@ -125,7 +111,7 @@ func getTagName(t []byte) (string, error) {
 		return "", errors.New("tag can't be less then 3 bytes")
 	}
 
-	if t[0] != openBracket {
+	if t[0] != symbol.OpenBracket {
 		return "", errors.New("tag must start from open bracket symbol")
 	}
 

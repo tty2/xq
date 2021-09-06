@@ -1,5 +1,5 @@
 /*
-Package tags is responsible for parsing and printing attributes data.
+Package attributes is responsible for parsing and printing attributes data.
 */
 package attributes
 
@@ -12,6 +12,7 @@ import (
 )
 
 type (
+	// Processor is an attrubute processor. Keeps needed attributes to process data and handle attribute data.
 	Processor struct {
 		targetAttributesList []string
 		path                 []domain.Step
@@ -19,6 +20,7 @@ type (
 	}
 )
 
+// NewProcessor creates a new Processor with needed attributes.
 func NewProcessor(path []domain.Step, attribute string) *Processor {
 	return &Processor{
 		path:      path,
@@ -26,6 +28,7 @@ func NewProcessor(path []domain.Step, attribute string) *Processor {
 	}
 }
 
+// Process reads the data from `r` reader and processes it.
 func (p *Processor) Process(r *bufio.Reader) error {
 	buf := make([]byte, 0, 4*1024)
 
@@ -51,7 +54,7 @@ func (p *Processor) Process(r *bufio.Reader) error {
 
 func (p *Processor) printAttrubutes() {
 	for i := range p.targetAttributesList {
-		fmt.Println(p.targetAttributesList[i])
+		fmt.Println(p.targetAttributesList[i]) // nolint forbidigo: the purpose of the function is print to stdout
 	}
 }
 
