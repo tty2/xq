@@ -9,6 +9,7 @@ type Step struct {
 	Index int
 }
 
+// PathsMatch checks if `p` and `ph` are similar.
 func PathsMatch(p []Step, ph []string) bool {
 	if len(p) != len(ph) {
 		return false

@@ -25,7 +25,10 @@ type (
 	}
 
 	tag struct {
-		bytes []byte
+		bytes  []byte
+		name   string
+		closed bool
+		single bool
 	}
 )
 
@@ -77,22 +80,19 @@ func (p *Processor) process(chunk []byte) error {
 			if chunk[i] != symbol.CloseBracket {
 				continue
 			}
-
 			p.insideTag = false
 
-			tagName, err := getTagName(p.currentTag.bytes)
+			err := p.processCurrentTag()
 			if err != nil {
 				return err
 			}
 
-			if domain.PathsMatch(p.queryPath, p.currentPath) {
-				if slice.ContainsString(p.targetTagsList, tagName) {
-					continue
-				}
-				p.targetTagsList = append(p.targetTagsList, tagName)
-
-				continue
+			err = p.updatePath()
+			if err != nil {
+				return err
 			}
+
+			p.updateTagList()
 		}
 
 		if chunk[i] == symbol.OpenBracket {
@@ -106,27 +106,68 @@ func (p *Processor) process(chunk []byte) error {
 	return nil
 }
 
-func getTagName(t []byte) (string, error) {
-	if len(t) < 3 {
-		return "", errors.New("tag can't be less then 3 bytes")
+func (p *Processor) processCurrentTag() error {
+	if len(p.currentTag.bytes) < 3 {
+		return errors.New("tag can't be less then 3 bytes")
 	}
 
-	if t[0] != symbol.OpenBracket {
-		return "", errors.New("tag must start from open bracket symbol")
+	if p.currentTag.bytes[0] != symbol.OpenBracket {
+		return errors.New("tag must start from open bracket symbol")
 	}
 
-	startName := 1   // name starts after open bracket
-	if t[1] == '/' { // closed tag
+	startName := 1                    // name starts after open bracket
+	if p.currentTag.bytes[1] == '/' { // closed tag
 		startName = 2
+		p.currentTag.closed = true
+	}
+	if p.currentTag.bytes[len(p.currentTag.bytes)-2] == '/' {
+		p.currentTag.single = true
 	}
 
 	endName := startName
 
-	for ; endName < len(t)-1; endName++ {
-		if t[endName] == ' ' {
+	for ; endName < len(p.currentTag.bytes)-1; endName++ {
+		if p.currentTag.bytes[endName] == ' ' {
 			break
 		}
 	}
 
-	return string(t[startName:endName]), nil
+	p.currentTag.name = string(p.currentTag.bytes[startName:endName])
+
+	return nil
+}
+
+func (p *Processor) updateTagList() {
+	if !domain.PathsMatch(p.queryPath, p.currentPath) {
+		return
+	}
+
+	if !slice.ContainsString(p.targetTagsList, p.currentTag.name) {
+		return
+	}
+
+	p.targetTagsList = append(p.targetTagsList, p.currentTag.name)
+}
+
+func (p *Processor) updatePath() error {
+	if p.currentTag.single {
+		return nil
+	}
+
+	lastElement := len(p.currentPath) - 1
+
+	if p.currentTag.closed {
+		if p.currentPath[lastElement] != p.currentTag.name {
+			return fmt.Errorf("incorrect xml structure: the last open tag is %s, but close tag is %s",
+				p.currentPath[lastElement], p.currentTag.name)
+		}
+
+		p.currentPath = p.currentPath[:lastElement]
+
+		return nil
+	}
+
+	p.currentPath = append(p.currentPath, p.currentTag.name)
+
+	return nil
 }
