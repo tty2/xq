@@ -28,7 +28,7 @@ type (
 		bytes  []byte
 		name   string
 		closed bool
-		single bool
+		skip   bool
 	}
 )
 
@@ -87,12 +87,13 @@ func (p *Processor) process(chunk []byte) error {
 				return err
 			}
 
+			p.updateTagList()
+
 			err = p.updatePath()
 			if err != nil {
 				return err
 			}
 
-			p.updateTagList()
 		}
 
 		if chunk[i] == symbol.OpenBracket {
@@ -115,13 +116,12 @@ func (p *Processor) processCurrentTag() error {
 		return errors.New("tag must start from open bracket symbol")
 	}
 
+	p.markIfSkip()
+
 	startName := 1                    // name starts after open bracket
 	if p.currentTag.bytes[1] == '/' { // closed tag
 		startName = 2
 		p.currentTag.closed = true
-	}
-	if p.currentTag.bytes[len(p.currentTag.bytes)-2] == '/' {
-		p.currentTag.single = true
 	}
 
 	endName := startName
@@ -137,20 +137,35 @@ func (p *Processor) processCurrentTag() error {
 	return nil
 }
 
+func (p *Processor) markIfSkip() {
+	if p.currentTag.bytes[len(p.currentTag.bytes)-2] == '/' {
+		p.currentTag.skip = true
+	}
+	if p.currentTag.bytes[1] == '?' {
+		p.currentTag.skip = true
+	}
+	if p.currentTag.bytes[1] == '!' {
+		p.currentTag.skip = true
+	}
+}
+
 func (p *Processor) updateTagList() {
 	if !domain.PathsMatch(p.queryPath, p.currentPath) {
 		return
 	}
 
-	if !slice.ContainsString(p.targetTagsList, p.currentTag.name) {
+	if slice.ContainsString(p.targetTagsList, p.currentTag.name) {
 		return
 	}
 
+	if p.queryPath[len(p.queryPath)-1].Name == p.currentTag.name {
+		return
+	}
 	p.targetTagsList = append(p.targetTagsList, p.currentTag.name)
 }
 
 func (p *Processor) updatePath() error {
-	if p.currentTag.single {
+	if p.currentTag.skip {
 		return nil
 	}
 
