@@ -25,10 +25,11 @@ type (
 	}
 
 	tag struct {
-		bytes  []byte
-		name   string
-		closed bool
-		skip   bool
+		bytes    []byte
+		name     string
+		closed   bool
+		skip     bool
+		brackets int
 	}
 )
 
@@ -75,11 +76,23 @@ func (p *Processor) printTagsInside() {
 func (p *Processor) process(chunk []byte) error {
 	for i := range chunk {
 		if p.insideTag {
+			if chunk[i] == symbol.OpenBracket {
+				p.currentTag.brackets++
+
+				continue
+			}
+
 			p.currentTag.bytes = append(p.currentTag.bytes, chunk[i])
 
 			if chunk[i] != symbol.CloseBracket {
 				continue
 			}
+
+			p.currentTag.brackets--
+			if p.currentTag.brackets > 0 {
+				continue
+			}
+
 			p.insideTag = false
 
 			err := p.processCurrentTag()
@@ -93,13 +106,13 @@ func (p *Processor) process(chunk []byte) error {
 			if err != nil {
 				return err
 			}
-
 		}
 
 		if chunk[i] == symbol.OpenBracket {
 			p.insideTag = true
 			p.currentTag = tag{
-				bytes: []byte{chunk[i]},
+				bytes:    []byte{chunk[i]},
+				brackets: 1,
 			}
 		}
 	}
