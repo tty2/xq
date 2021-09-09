@@ -5,8 +5,10 @@ package attributes
 
 import (
 	"bufio"
+	"errors"
 	"fmt"
 	"io"
+	"strings"
 
 	"github.com/tty2/xq/internal/domain"
 )
@@ -21,11 +23,17 @@ type (
 )
 
 // NewProcessor creates a new Processor with needed attributes.
-func NewProcessor(path []domain.Step, attribute string) *Processor {
+func NewProcessor(path []domain.Step, attribute string) (*Processor, error) {
+	if len(path) == 0 {
+		return nil, errors.New("query path must not be empty")
+	}
+	if strings.TrimSpace(attribute) == "" {
+		return nil, errors.New("attribute you search must not be empty")
+	}
 	return &Processor{
 		path:      path,
 		attribute: attribute,
-	}
+	}, nil
 }
 
 // Process reads the data from `r` reader and processes it.

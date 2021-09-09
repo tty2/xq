@@ -16,7 +16,7 @@ type processor interface {
 	Process(r *bufio.Reader) error
 }
 
-func getProcessor(q query) processor {
+func getProcessor(q query) (processor, error) {
 	if len(q.path) == 0 {
 		return data.NewProcessor(indentItemSize)
 	} else if q.attribute != "" {

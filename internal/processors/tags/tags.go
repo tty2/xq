@@ -34,10 +34,13 @@ type (
 )
 
 // NewProcessor creates a new Processor with needed attributes.
-func NewProcessor(path []domain.Step) *Processor {
+func NewProcessor(path []domain.Step) (*Processor, error) {
+	if len(path) == 0 {
+		return nil, errors.New("query path must not be empty")
+	}
 	return &Processor{
 		queryPath: path,
-	}
+	}, nil
 }
 
 // Process reads the data from `r` reader and processes it.
@@ -76,48 +79,55 @@ func (p *Processor) printTagsInside() {
 func (p *Processor) process(chunk []byte) error {
 	for i := range chunk {
 		if p.insideTag {
-			if chunk[i] == symbol.OpenBracket {
-				p.currentTag.brackets++
-
-				continue
-			}
-
-			p.currentTag.bytes = append(p.currentTag.bytes, chunk[i])
-
-			if chunk[i] != symbol.CloseBracket {
-				continue
-			}
-
-			p.currentTag.brackets--
-			if p.currentTag.brackets > 0 {
-				continue
-			}
-
-			p.insideTag = false
-
-			err := p.processCurrentTag()
+			err := p.addSymbolIntoTag(chunk[i])
 			if err != nil {
 				return err
 			}
-
-			p.updateTagList()
-
-			err = p.updatePath()
-			if err != nil {
-				return err
-			}
-		}
-
-		if chunk[i] == symbol.OpenBracket {
+		} else if chunk[i] == symbol.OpenBracket {
 			p.insideTag = true
 			p.currentTag = tag{
-				bytes:    []byte{chunk[i]},
+				bytes:    []byte{symbol.OpenBracket},
 				brackets: 1,
 			}
 		}
+		// skip data outside tags because we are interested in tags only
 	}
 
 	return nil
+}
+
+func (p *Processor) addSymbolIntoTag(s byte) error {
+	if s == symbol.OpenBracket {
+		p.currentTag.brackets++
+
+		return nil
+	}
+
+	p.currentTag.bytes = append(p.currentTag.bytes, s)
+
+	if s != symbol.CloseBracket {
+		return nil
+	}
+
+	p.currentTag.brackets--
+	if p.currentTag.brackets > 0 {
+		return nil
+	}
+
+	p.insideTag = false
+
+	err := p.processCurrentTag()
+	if err != nil {
+		return err
+	}
+
+	p.updateTagList()
+
+	if p.currentTag.skip {
+		return nil
+	}
+
+	return p.updatePath()
 }
 
 func (p *Processor) processCurrentTag() error {
@@ -170,7 +180,7 @@ func (p *Processor) updateTagList() {
 	if slice.ContainsString(p.targetTagsList, p.currentTag.name) {
 		return
 	}
-
+	// step back after deeper nesting tag with close tag (queryPath == currentPath)
 	if p.queryPath[len(p.queryPath)-1].Name == p.currentTag.name {
 		return
 	}
@@ -178,10 +188,6 @@ func (p *Processor) updateTagList() {
 }
 
 func (p *Processor) updatePath() error {
-	if p.currentTag.skip {
-		return nil
-	}
-
 	lastElement := len(p.currentPath) - 1
 
 	if p.currentTag.closed {
@@ -190,7 +196,7 @@ func (p *Processor) updatePath() error {
 				p.currentPath[lastElement], p.currentTag.name)
 		}
 
-		p.currentPath = p.currentPath[:lastElement]
+		p.currentPath = p.currentPath[:lastElement] // TODO: consider to add p.currentTag.brackets-- after this line
 
 		return nil
 	}

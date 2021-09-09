@@ -50,10 +50,10 @@ type (
 )
 
 // NewProcessor creates a new Processor with needed attributes.
-func NewProcessor(indentationSize int) *Processor {
+func NewProcessor(indentationSize int) (*Processor, error) {
 	return &Processor{
 		IndentItemSize: indentationSize,
-	}
+	}, nil
 }
 
 // Process reads the data from `r` reader and processes it.
