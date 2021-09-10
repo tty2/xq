@@ -10,6 +10,7 @@ func ContainsString(s []string, v string) bool {
 			return true
 		}
 	}
+
 	return false
 }
 

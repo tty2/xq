@@ -17,8 +17,8 @@ func TestGetStep(t *testing.T) {
 
 		res := getStep(tg)
 
-		rq.Equal(tg, res.name)
-		rq.Equal(-1, res.count)
+		rq.Equal(tg, res.Name)
+		rq.Equal(-1, res.Index)
 	})
 
 	t.Run("with index", func(t *testing.T) {
@@ -28,8 +28,8 @@ func TestGetStep(t *testing.T) {
 
 		res := getStep(tg)
 
-		rq.Equal("tag_name", res.name)
-		rq.Equal(3, res.count)
+		rq.Equal("tag_name", res.Name)
+		rq.Equal(3, res.Index)
 	})
 }
 
@@ -83,12 +83,12 @@ func TestGetPath(t *testing.T) {
 		st := q.getPath()
 
 		rq.Len(st, 3)
-		rq.Equal("tag1", st[0].name)
-		rq.Equal(-1, st[0].count)
-		rq.Equal("tag2", st[1].name)
-		rq.Equal(-1, st[1].count)
-		rq.Equal("tag3", st[2].name)
-		rq.Equal(-1, st[2].count)
+		rq.Equal("tag1", st[0].Name)
+		rq.Equal(-1, st[0].Index)
+		rq.Equal("tag2", st[1].Name)
+		rq.Equal(-1, st[1].Index)
+		rq.Equal("tag3", st[2].Name)
+		rq.Equal(-1, st[2].Index)
 	})
 
 	t.Run("leading dot", func(t *testing.T) {
@@ -102,12 +102,12 @@ func TestGetPath(t *testing.T) {
 		st := q.getPath()
 
 		rq.Len(st, 3)
-		rq.Equal("tag1", st[0].name)
-		rq.Equal(-1, st[0].count)
-		rq.Equal("tag2", st[1].name)
-		rq.Equal(-1, st[1].count)
-		rq.Equal("tag3", st[2].name)
-		rq.Equal(-1, st[2].count)
+		rq.Equal("tag1", st[0].Name)
+		rq.Equal(-1, st[0].Index)
+		rq.Equal("tag2", st[1].Name)
+		rq.Equal(-1, st[1].Index)
+		rq.Equal("tag3", st[2].Name)
+		rq.Equal(-1, st[2].Index)
 	})
 }
 
@@ -123,7 +123,6 @@ func TestGetQuery(t *testing.T) {
 		q := getQuery()
 
 		rq.Equal(".", q.request)
-		rq.Equal(empty, q.target)
 	})
 
 	t.Run("path only", func(t *testing.T) {
@@ -135,7 +134,6 @@ func TestGetQuery(t *testing.T) {
 		q := getQuery()
 
 		rq.Equal(".tag1.tag2", q.request)
-		rq.Equal(_tags, q.target)
 	})
 
 	t.Run("path only", func(t *testing.T) {
@@ -147,46 +145,6 @@ func TestGetQuery(t *testing.T) {
 		q := getQuery()
 
 		rq.Equal(".tag1.tag2", q.request)
-		rq.Equal(_tags, q.target)
-	})
-}
-
-func TestToTag(t *testing.T) {
-	t.Parallel()
-
-	t.Run("tag", func(t *testing.T) {
-		t.Parallel()
-		rq := require.New(t)
-
-		rq.Equal(_tags, toTag("tag"))
-	})
-
-	t.Run("value", func(t *testing.T) {
-		t.Parallel()
-		rq := require.New(t)
-
-		rq.Equal(tagValue, toTag("value"))
-	})
-
-	t.Run("attribute", func(t *testing.T) {
-		t.Parallel()
-		rq := require.New(t)
-
-		rq.Equal(attr, toTag("attribute"))
-	})
-
-	t.Run("aValue", func(t *testing.T) {
-		t.Parallel()
-		rq := require.New(t)
-
-		rq.Equal(attrValue, toTag("aValue"))
-	})
-
-	t.Run("empty", func(t *testing.T) {
-		t.Parallel()
-		rq := require.New(t)
-
-		rq.Equal(empty, toTag(""))
 	})
 }
 
@@ -198,7 +156,6 @@ func TestParseQuery(t *testing.T) {
 		rq := require.New(t)
 
 		q := query{
-			target:  _tags,
 			request: ".",
 		}
 
@@ -212,15 +169,14 @@ func TestParseQuery(t *testing.T) {
 		rq := require.New(t)
 
 		q := query{
-			target:  _tags,
 			request: ".tag1.tag2",
 		}
 
 		q.parse()
 
 		rq.Len(q.path, 2)
-		rq.Equal("tag1", q.path[0].name)
-		rq.Equal("tag2", q.path[1].name)
+		rq.Equal("tag1", q.path[0].Name)
+		rq.Equal("tag2", q.path[1].Name)
 	})
 
 	t.Run("with attribute", func(t *testing.T) {
@@ -228,15 +184,14 @@ func TestParseQuery(t *testing.T) {
 		rq := require.New(t)
 
 		q := query{
-			target:  _tags,
 			request: ".tag1.tag2#attr_name",
 		}
 
 		q.parse()
 
 		rq.Len(q.path, 2)
-		rq.Equal("tag1", q.path[0].name)
-		rq.Equal("tag2", q.path[1].name)
+		rq.Equal("tag1", q.path[0].Name)
+		rq.Equal("tag2", q.path[1].Name)
 		rq.Equal("attr_name", q.attribute)
 	})
 }

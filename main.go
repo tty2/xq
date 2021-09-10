@@ -9,14 +9,14 @@ import (
 func main() {
 	q := getQuery()
 	q.parse()
-
-	p := newParser(q)
+	proc, err := getProcessor(q)
+	if err != nil {
+		log.Fatal(err)
+	}
 
 	r := bufio.NewReader(os.Stdin)
 
-	proc := p.getProcessor()
-
-	err := proc.Process(r)
+	err = proc.Process(r)
 	if err != nil {
 		log.Fatal(err)
 	}
