@@ -38,6 +38,7 @@ func NewProcessor(path []domain.Step) (*Processor, error) {
 	if len(path) == 0 {
 		return nil, errors.New("query path must not be empty")
 	}
+
 	return &Processor{
 		queryPath: path,
 	}, nil

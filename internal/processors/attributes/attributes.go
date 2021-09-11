@@ -30,6 +30,7 @@ func NewProcessor(path []domain.Step, attribute string) (*Processor, error) {
 	if strings.TrimSpace(attribute) == "" {
 		return nil, errors.New("attribute you search must not be empty")
 	}
+
 	return &Processor{
 		path:      path,
 		attribute: attribute,
