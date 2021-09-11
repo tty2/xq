@@ -191,7 +191,7 @@ func (p *Processor) colorizeTag() []byte {
 			continue
 		}
 		if attr.InsideValue {
-			if p.CurrentTag.Bytes[i] == attr.Quote && attr.Value[len(attr.Value)-1] != '\\' {
+			if p.CurrentTag.Bytes[i] == attr.Quote && (len(attr.Value) == 0 || attr.Value[len(attr.Value)-1] != '\\') {
 				attr.InsideValue = false
 				coloredTag = append(coloredTag, symbol.Space)
 				coloredTag = append(coloredTag, []byte(color.Green)...)
