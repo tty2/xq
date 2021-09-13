@@ -102,7 +102,7 @@ for concrete tag
 - [x] Add indentation for output
 - [x] Colorize tags
 - [x] Colorize attributes
-- [ ] Get tags list
+- [x] Get tags list
 - [ ] Get attributes list
 - [ ] Get tag's data
 - [ ] Get attributes data
