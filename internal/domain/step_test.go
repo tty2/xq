@@ -10,6 +10,7 @@ func TestPathsMatch(t *testing.T) {
 	t.Parallel()
 
 	t.Run("different len", func(t *testing.T) {
+		t.Parallel()
 		rq := require.New(t)
 
 		st := []Step{
@@ -24,6 +25,7 @@ func TestPathsMatch(t *testing.T) {
 	})
 
 	t.Run("different len: bigger", func(t *testing.T) {
+		t.Parallel()
 		rq := require.New(t)
 
 		st := []Step{
@@ -38,6 +40,7 @@ func TestPathsMatch(t *testing.T) {
 	})
 
 	t.Run("different steps", func(t *testing.T) {
+		t.Parallel()
 		rq := require.New(t)
 
 		st := []Step{
@@ -52,6 +55,7 @@ func TestPathsMatch(t *testing.T) {
 	})
 
 	t.Run("same", func(t *testing.T) {
+		t.Parallel()
 		rq := require.New(t)
 
 		st := []Step{
