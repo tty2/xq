@@ -1,8 +1,6 @@
 package domain
 
 import (
-	"fmt"
-
 	"github.com/tty2/xq/internal/domain/symbol"
 )
 
@@ -52,7 +50,7 @@ func (t *Tag) SetName() error {
 		}
 	}
 
-	t.Name = fmt.Sprint(t.Bytes[startName:endName])
+	t.Name = string(t.Bytes[startName:endName])
 
 	return nil
 }
@@ -76,7 +74,11 @@ func (t *Tag) SetNameAndAttributes() error {
 		}
 	}
 
-	t.Name = fmt.Sprint(t.Bytes[startName:endName])
+	t.Name = string(t.Bytes[startName:endName])
+
+	if startName == 2 {
+		return nil // it's forbidden to set attributes to close tag
+	}
 
 	var insideTag bool
 	t.Attributes = map[string]string{}
@@ -85,7 +87,7 @@ func (t *Tag) SetNameAndAttributes() error {
 		if insideTag {
 			if symbol.IsQuote(t.Bytes[i]) {
 				if len(attr.Name) != 0 {
-					t.Attributes[fmt.Sprint(attr.Name)] = fmt.Sprint(attr.Value)
+					t.Attributes[string(attr.Name)] = string(attr.Value)
 
 					attr = attribute{}
 					insideTag = false
@@ -97,10 +99,10 @@ func (t *Tag) SetNameAndAttributes() error {
 
 			continue
 		}
-		if t.Bytes[i] != '=' {
+		if t.Bytes[i] == '=' {
 			continue
 		}
-		if symbol.IsQuote(t.Bytes[i]) && t.Bytes[i-1] != '=' {
+		if symbol.IsQuote(t.Bytes[i]) && t.Bytes[i-1] == '=' {
 			insideTag = true
 
 			continue
@@ -111,13 +113,4 @@ func (t *Tag) SetNameAndAttributes() error {
 	}
 
 	return nil
-}
-
-func (t *Tag) GetAttributeValue(name string) (string, error) {
-	v, ok := t.Attributes[name]
-	if !ok {
-		return "", fmt.Errorf("there is no attribute with name %s", name)
-	}
-
-	return v, nil
 }
