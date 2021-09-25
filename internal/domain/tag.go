@@ -4,6 +4,11 @@ import (
 	"github.com/tty2/xq/internal/domain/symbol"
 )
 
+// Tag represents a tag object.
+// It make sense to work with is with `Bytes` field populated only otherwise all the methods
+// will not work.
+// `Bytes` field MUST start from open bracket `<` and finish with close bracket `>` and
+// MUST be 3 symbols or bigger otherwise tag is invalid.
 type Tag struct {
 	Bytes      []byte
 	Name       string
@@ -15,6 +20,8 @@ type attribute struct {
 	Value []byte
 }
 
+// Validate checks if tag `Bytes` has 3 or more symbols, starts with open bracket
+// and the last symbol is close bracket.
 func (t *Tag) Validate() error {
 	if len(t.Bytes) < 3 {
 		return ErrTagShort
@@ -31,6 +38,7 @@ func (t *Tag) Validate() error {
 	return nil
 }
 
+// SetName takes name from tag and set to `Name` field.
 func (t *Tag) SetName() error {
 	err := t.Validate()
 	if err != nil {
@@ -55,6 +63,8 @@ func (t *Tag) SetName() error {
 	return nil
 }
 
+// SetNameAndAttributes takes name from tag and set it to `Name` field +
+// takes all attributes and their values and put them to `Attributes`.
 func (t *Tag) SetNameAndAttributes() error {
 	err := t.Validate()
 	if err != nil {

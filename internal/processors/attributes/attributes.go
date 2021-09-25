@@ -17,7 +17,6 @@ type (
 	// Processor is an attrubute processor. Keeps needed attributes to process data and handle attribute data.
 	Processor struct {
 		queryPath            []domain.Step
-		currentPath          []string
 		attribute            string
 		targetAttributesList []string
 	}
@@ -69,5 +68,4 @@ func (p *Processor) printAttrubutes() {
 }
 
 func (p *Processor) process(chunk []byte) {
-
 }
