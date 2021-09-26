@@ -132,31 +132,19 @@ func (p *Processor) addSymbolIntoTag(s byte) error {
 }
 
 func (p *Processor) processCurrentTag() error {
-	if len(p.currentTag.bytes) < 3 {
-		return errors.New("tag can't be less then 3 bytes")
-	}
-
-	if p.currentTag.bytes[0] != symbol.OpenBracket {
-		return errors.New("tag must start from open bracket symbol")
-	}
-
 	p.markIfSkip()
 
-	startName := 1                    // name starts after open bracket
-	if p.currentTag.bytes[1] == '/' { // closed tag
-		startName = 2
-		p.currentTag.closed = true
+	tg := domain.Tag{
+		Bytes: p.currentTag.bytes,
 	}
 
-	endName := startName
-
-	for ; endName < len(p.currentTag.bytes)-1; endName++ {
-		if p.currentTag.bytes[endName] == ' ' {
-			break
-		}
+	err := tg.SetName()
+	if err != nil {
+		return err
 	}
 
-	p.currentTag.name = string(p.currentTag.bytes[startName:endName])
+	p.currentTag.closed = p.currentTag.bytes[1] == '/'
+	p.currentTag.name = tg.Name
 
 	return nil
 }
