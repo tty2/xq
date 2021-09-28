@@ -19,9 +19,10 @@ type (
 	Processor struct {
 		insideTag      bool
 		queryPath      []domain.Step
+		queryAttribute string
 		currentPath    []string
 		currentTag     tag
-		targetTagsList []string
+		printList      []string
 	}
 
 	tag struct {
@@ -72,8 +73,8 @@ func (p *Processor) Process(r *bufio.Reader) error {
 }
 
 func (p *Processor) printTagsInside() {
-	for i := range p.targetTagsList {
-		fmt.Println(p.targetTagsList[i]) // nolint forbidigo: the purpose of the function is print to stdout
+	for i := range p.printList {
+		fmt.Println(p.printList[i]) // nolint forbidigo: the purpose of the function is print to stdout
 	}
 }
 
@@ -122,7 +123,7 @@ func (p *Processor) addSymbolIntoTag(s byte) error {
 		return err
 	}
 
-	p.updateTagList()
+	p.updatePrintList()
 
 	if p.currentTag.skip {
 		return nil
@@ -161,19 +162,19 @@ func (p *Processor) markIfSkip() {
 	}
 }
 
-func (p *Processor) updateTagList() {
+func (p *Processor) updatePrintList() {
 	if !domain.PathsMatch(p.queryPath, p.currentPath) {
 		return
 	}
 
-	if slice.ContainsString(p.targetTagsList, p.currentTag.name) {
+	if slice.ContainsString(p.printList, p.currentTag.name) {
 		return
 	}
 	// step back after deeper nesting tag with close tag (queryPath == currentPath)
 	if p.queryPath[len(p.queryPath)-1].Name == p.currentTag.name {
 		return
 	}
-	p.targetTagsList = append(p.targetTagsList, p.currentTag.name)
+	p.printList = append(p.printList, p.currentTag.name)
 }
 
 func (p *Processor) updatePath() error {
