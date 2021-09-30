@@ -99,13 +99,13 @@ func TestUpdateTagsList(t *testing.T) {
 			currentTag: tag{
 				name: "7",
 			},
-			targetTagsList: []string{},
+			printList: []string{},
 		}
 
 		rq := require.New(t)
 
-		p.updateTagList()
-		rq.Len(p.targetTagsList, 0)
+		p.updatePrintList()
+		rq.Len(p.printList, 0)
 	})
 
 	t.Run("skip: current path greater than query", func(t *testing.T) {
@@ -134,13 +134,13 @@ func TestUpdateTagsList(t *testing.T) {
 			currentTag: tag{
 				name: "10",
 			},
-			targetTagsList: []string{"6", "7"},
+			printList: []string{"6", "7"},
 		}
 
 		rq := require.New(t)
 
-		p.updateTagList()
-		rq.Len(p.targetTagsList, 2)
+		p.updatePrintList()
+		rq.Len(p.printList, 2)
 	})
 
 	t.Run("skip: current path contains current tag name", func(t *testing.T) {
@@ -169,13 +169,13 @@ func TestUpdateTagsList(t *testing.T) {
 			currentTag: tag{
 				name: "7",
 			},
-			targetTagsList: []string{"6", "7"},
+			printList: []string{"6", "7"},
 		}
 
 		rq := require.New(t)
 
-		p.updateTagList()
-		rq.Len(p.targetTagsList, 2)
+		p.updatePrintList()
+		rq.Len(p.printList, 2)
 	})
 
 	t.Run("skip: step back from closed tag: last query name is the same as current tag", func(t *testing.T) {
@@ -204,13 +204,13 @@ func TestUpdateTagsList(t *testing.T) {
 			currentTag: tag{
 				name: "4",
 			},
-			targetTagsList: []string{"6", "7"},
+			printList: []string{"6", "7"},
 		}
 
 		rq := require.New(t)
 
-		p.updateTagList()
-		rq.Len(p.targetTagsList, 2)
+		p.updatePrintList()
+		rq.Len(p.printList, 2)
 	})
 
 	t.Run("add tag", func(t *testing.T) {
@@ -239,13 +239,13 @@ func TestUpdateTagsList(t *testing.T) {
 			currentTag: tag{
 				name: "8",
 			},
-			targetTagsList: []string{"6", "7"},
+			printList: []string{"6", "7"},
 		}
 
 		rq := require.New(t)
 
-		p.updateTagList()
-		rq.Len(p.targetTagsList, 3)
+		p.updatePrintList()
+		rq.Len(p.printList, 3)
 	})
 }
 
@@ -488,7 +488,7 @@ func TestAddSymbolIntoTag(t *testing.T) {
 		rq := require.New(t)
 
 		rq.Equal("", p.currentTag.name)
-		rq.Len(p.targetTagsList, 0)
+		rq.Len(p.printList, 0)
 		rq.Len(p.currentPath, 1)
 
 		err := p.addSymbolIntoTag(symbol.CloseBracket)
@@ -496,8 +496,8 @@ func TestAddSymbolIntoTag(t *testing.T) {
 		rq.Equal("<tag>", string(p.currentTag.bytes))
 		rq.False(p.insideTag)
 		rq.Equal("tag", p.currentTag.name)
-		rq.Len(p.targetTagsList, 1)
-		rq.Equal("tag", p.targetTagsList[0])
+		rq.Len(p.printList, 1)
+		rq.Equal("tag", p.printList[0])
 		rq.Len(p.currentPath, 2)
 		rq.Equal("tag", p.currentPath[1])
 	})
