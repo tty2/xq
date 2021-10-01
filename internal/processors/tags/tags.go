@@ -17,12 +17,13 @@ import (
 type (
 	// Processor is a tag processor. Keeps needed attributes to process data and handle tag data.
 	Processor struct {
-		insideTag      bool
-		queryPath      []domain.Step
-		queryAttribute string
-		currentPath    []string
-		currentTag     tag
-		printList      []string
+		insideTag bool
+		queryPath []domain.Step
+		// queryAttribute   string
+		currentPath      []string
+		currentTag       tag
+		printtedTagsList []string
+		printList        []string
 	}
 
 	tag struct {
@@ -46,36 +47,41 @@ func NewProcessor(path []domain.Step) (*Processor, error) {
 }
 
 // Process reads the data from `r` reader and processes it.
-func (p *Processor) Process(r *bufio.Reader) error {
+func (p *Processor) Process(r *bufio.Reader) chan string {
 	buf := make([]byte, 0, 4*1024)
+	ch := make(chan string)
 
-	for {
-		n, err := r.Read(buf[:cap(buf)])
-		if err != nil {
-			if err == io.EOF {
-				break
+	go func() {
+		defer close(ch)
+		for {
+			n, err := r.Read(buf[:cap(buf)])
+			if err != nil {
+				if err == io.EOF {
+					break
+				}
+				ch <- err.Error()
+
+				return
 			}
 
-			return err
+			buf = buf[:n]
+
+			err = p.process(buf)
+			if err != nil {
+				ch <- err.Error()
+
+				return
+			}
+
+			for i := range p.printList {
+				ch <- p.printList[i]
+			}
+
+			p.printList = []string{}
 		}
+	}()
 
-		buf = buf[:n]
-
-		err = p.process(buf)
-		if err != nil {
-			return err
-		}
-	}
-
-	p.printTagsInside()
-
-	return nil
-}
-
-func (p *Processor) printTagsInside() {
-	for i := range p.printList {
-		fmt.Println(p.printList[i]) // nolint forbidigo: the purpose of the function is print to stdout
-	}
+	return ch
 }
 
 func (p *Processor) process(chunk []byte) error {
@@ -167,7 +173,7 @@ func (p *Processor) updatePrintList() {
 		return
 	}
 
-	if slice.ContainsString(p.printList, p.currentTag.name) {
+	if slice.ContainsString(p.printtedTagsList, p.currentTag.name) {
 		return
 	}
 	// step back after deeper nesting tag with close tag (queryPath == currentPath)
@@ -175,6 +181,7 @@ func (p *Processor) updatePrintList() {
 		return
 	}
 	p.printList = append(p.printList, p.currentTag.name)
+	p.printtedTagsList = append(p.printtedTagsList, p.currentTag.name)
 }
 
 func (p *Processor) updatePath() error {

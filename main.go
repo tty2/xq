@@ -2,6 +2,7 @@ package main
 
 import (
 	"bufio"
+	"fmt"
 	"log"
 	"os"
 )
@@ -16,8 +17,14 @@ func main() {
 
 	r := bufio.NewReader(os.Stdin)
 
-	err = proc.Process(r)
-	if err != nil {
-		log.Fatal(err)
+	c := proc.Process(r)
+
+	for {
+		line, ok := <-c
+		if !ok {
+			break
+		}
+
+		fmt.Println(line) // nolint forbidigo: print is executed on purpose here
 	}
 }

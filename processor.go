@@ -13,7 +13,7 @@ const (
 )
 
 type processor interface {
-	Process(r *bufio.Reader) error
+	Process(r *bufio.Reader) chan string
 }
 
 func getProcessor(q query) (processor, error) {
