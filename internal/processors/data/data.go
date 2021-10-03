@@ -96,57 +96,72 @@ func (p *Processor) Process(r *bufio.Reader) chan string {
 
 func (p *Processor) process(chunk []byte) error {
 	for i := range chunk {
-		// skip carriage return and new line from data in order do not duplicate with created ones by Processor
-		if p.SkipData && (chunk[i] == ' ' || chunk[i] == '\t') {
+		switch {
+		case p.skip(chunk[i]):
 			continue
-		}
-		if chunk[i] == symbol.NewLine || chunk[i] == symbol.CarriageReturn {
-			p.SkipData = true
-
-			continue
-		}
-		p.SkipData = false
-
-		if p.InsideTag {
-			p.CurrentTag.Bytes = append(p.CurrentTag.Bytes, chunk[i])
-
-			if chunk[i] == symbol.CloseBracket {
-				p.CurrentTag.Brackets--
-
-				if p.CurrentTag.Brackets > 0 {
-					continue
-				}
-
-				p.InsideTag = false
-				err := p.printTag()
-				if err != nil {
-					return err
-				}
-				p.SkipData = true // skip if there are empty symbol beeween close tag and new data
-			} else if chunk[i] == symbol.OpenBracket {
-				p.CurrentTag.Brackets++
+		case p.InsideTag:
+			err := p.closeTag(chunk[i])
+			if err != nil {
+				return err
 			}
+		case chunk[i] == symbol.OpenBracket:
+			p.startTag(chunk[i])
+		default:
+			p.Data = append(p.Data, chunk[i])
+		}
+	}
 
-			continue
+	return nil
+}
+
+func (p *Processor) skip(b byte) bool {
+	// skip carriage return and new line from data in order do not duplicate with created ones by Processor
+	if p.SkipData && (b == ' ' || b == '\t') {
+		return true
+	}
+	if b == symbol.NewLine || b == symbol.CarriageReturn {
+		p.SkipData = true
+
+		return true
+	}
+
+	p.SkipData = false
+
+	return false
+}
+
+func (p *Processor) startTag(b byte) {
+	p.InsideTag = true
+	p.CurrentTag = tag{
+		Bytes: []byte{b},
+	}
+	p.CurrentTag.Brackets++
+
+	if len(p.Data) > 0 {
+		p.printList = append(p.printList, string(append(bytes.Repeat([]byte(" "),
+			p.IndentItemSize*p.Indentation), p.Data...)))
+		p.Data = []byte{}
+	}
+}
+
+func (p *Processor) closeTag(b byte) error {
+	p.CurrentTag.Bytes = append(p.CurrentTag.Bytes, b)
+
+	if b == symbol.CloseBracket {
+		p.CurrentTag.Brackets--
+
+		if p.CurrentTag.Brackets > 0 {
+			return nil
 		}
 
-		if chunk[i] == symbol.OpenBracket {
-			p.InsideTag = true
-			p.CurrentTag = tag{
-				Bytes: []byte{chunk[i]},
-			}
-			p.CurrentTag.Brackets++
-
-			if len(p.Data) > 0 {
-				p.printList = append(p.printList, string(append(bytes.Repeat([]byte(" "),
-					p.IndentItemSize*p.Indentation), p.Data...)))
-				p.Data = []byte{}
-			}
-
-			continue
+		p.InsideTag = false
+		err := p.printTag()
+		if err != nil {
+			return err
 		}
-
-		p.Data = append(p.Data, chunk[i])
+		p.SkipData = true // skip if there are empty symbol beeween close tag and new data
+	} else if b == symbol.OpenBracket {
+		p.CurrentTag.Brackets++
 	}
 
 	return nil
