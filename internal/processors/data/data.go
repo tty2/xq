@@ -12,7 +12,6 @@ import (
 	"bytes"
 	"fmt"
 	"io"
-	"log"
 
 	"github.com/tty2/xq/internal/domain/color"
 	"github.com/tty2/xq/internal/domain/symbol"
@@ -31,6 +30,7 @@ type (
 		Indentation    int
 		InsideTag      bool // semaphore that shows if we read data inside a tag
 		SkipData       bool
+		printList      []string
 	}
 
 	tag struct {
@@ -57,96 +57,134 @@ func NewProcessor(indentationSize int) (*Processor, error) {
 }
 
 // Process reads the data from `r` reader and processes it.
-func (p *Processor) Process(r *bufio.Reader) error {
+func (p *Processor) Process(r *bufio.Reader) chan string {
 	buf := make([]byte, 0, 4*1024)
+	ch := make(chan string)
 
-	for {
-		n, err := r.Read(buf[:cap(buf)])
-		if err != nil {
-			if err == io.EOF {
-				break
+	go func() {
+		defer close(ch)
+		for {
+			n, err := r.Read(buf[:cap(buf)])
+			if err != nil {
+				if err == io.EOF {
+					return
+				}
+				ch <- err.Error()
+
+				return
 			}
 
-			return err
+			buf = buf[:n]
+
+			err = p.process(buf)
+			if err != nil {
+				ch <- err.Error()
+
+				return
+			}
+
+			for i := range p.printList {
+				ch <- p.printList[i]
+			}
+
+			p.printList = []string{}
 		}
+	}()
 
-		buf = buf[:n]
+	return ch
+}
 
-		p.process(buf)
+func (p *Processor) process(chunk []byte) error {
+	for i := range chunk {
+		switch {
+		case p.skip(chunk[i]):
+			continue
+		case p.InsideTag:
+			err := p.closeTag(chunk[i])
+			if err != nil {
+				return err
+			}
+		case chunk[i] == symbol.OpenBracket:
+			p.startTag(chunk[i])
+		default:
+			p.Data = append(p.Data, chunk[i])
+		}
 	}
 
 	return nil
 }
 
-func (p *Processor) process(chunk []byte) {
-	for i := range chunk {
-		// skip carriage return and new line from data in order do not duplicate with created ones by Processor
-		if p.SkipData && (chunk[i] == ' ' || chunk[i] == '\t') {
-			continue
-		}
-		if chunk[i] == symbol.NewLine || chunk[i] == symbol.CarriageReturn {
-			p.SkipData = true
+func (p *Processor) skip(b byte) bool {
+	// skip carriage return and new line from data in order do not duplicate with created ones by Processor
+	if p.SkipData && (b == ' ' || b == '\t') {
+		return true
+	}
+	if b == symbol.NewLine || b == symbol.CarriageReturn {
+		p.SkipData = true
 
-			continue
-		}
-		p.SkipData = false
+		return true
+	}
 
-		if p.InsideTag {
-			p.CurrentTag.Bytes = append(p.CurrentTag.Bytes, chunk[i])
+	p.SkipData = false
 
-			if chunk[i] == symbol.CloseBracket {
-				p.CurrentTag.Brackets--
+	return false
+}
 
-				if p.CurrentTag.Brackets > 0 {
-					continue
-				}
+func (p *Processor) startTag(b byte) {
+	p.InsideTag = true
+	p.CurrentTag = tag{
+		Bytes: []byte{b},
+	}
+	p.CurrentTag.Brackets++
 
-				p.InsideTag = false
-				p.printTag()
-				p.SkipData = true // skip if there are empty symbol beeween close tag and new data
-			} else if chunk[i] == symbol.OpenBracket {
-				p.CurrentTag.Brackets++
-			}
-
-			continue
-		}
-
-		if chunk[i] == symbol.OpenBracket {
-			p.InsideTag = true
-			p.CurrentTag = tag{
-				Bytes: []byte{chunk[i]},
-			}
-			p.CurrentTag.Brackets++
-
-			if len(p.Data) > 0 {
-				// nolint forbidigo: printf is executed on purpose here
-				fmt.Printf("%s\n", append(bytes.Repeat([]byte(" "), p.IndentItemSize*p.Indentation), p.Data...))
-				p.Data = []byte{}
-			}
-
-			continue
-		}
-
-		p.Data = append(p.Data, chunk[i])
+	if len(p.Data) > 0 {
+		p.printList = append(p.printList, string(append(bytes.Repeat([]byte(" "),
+			p.IndentItemSize*p.Indentation), p.Data...)))
+		p.Data = []byte{}
 	}
 }
 
-// nolint forbidigo: printf in this method is executed on purpose
-func (p *Processor) printTag() {
+func (p *Processor) closeTag(b byte) error {
+	p.CurrentTag.Bytes = append(p.CurrentTag.Bytes, b)
+
+	if b == symbol.CloseBracket {
+		p.CurrentTag.Brackets--
+
+		if p.CurrentTag.Brackets > 0 {
+			return nil
+		}
+
+		p.InsideTag = false
+		err := p.printTag()
+		if err != nil {
+			return err
+		}
+		p.SkipData = true // skip if there are empty symbol beeween close tag and new data
+	} else if b == symbol.OpenBracket {
+		p.CurrentTag.Brackets++
+	}
+
+	return nil
+}
+
+func (p *Processor) printTag() error {
 	if len(p.CurrentTag.Bytes) < minTagSize {
-		log.Fatalf("tag size is too small = %d, tag is `%s`", len(p.CurrentTag.Bytes), p.CurrentTag.Bytes)
+		return fmt.Errorf("tag size is too small = %d, tag is `%s`", len(p.CurrentTag.Bytes), p.CurrentTag.Bytes)
 	}
 	if p.CurrentTag.Bytes[1] == '!' || p.CurrentTag.Bytes[1] == '?' { // service tag, comment or cdata
-		fmt.Printf("%s\n", append(bytes.Repeat([]byte(" "), p.IndentItemSize*p.Indentation), p.CurrentTag.Bytes...))
+		p.printList = append(p.printList, string(
+			append(bytes.Repeat([]byte(" "), p.IndentItemSize*p.Indentation), p.CurrentTag.Bytes...)))
 
-		return
+		return nil
 	}
 
-	fmt.Printf("%s\n", p.colorizeTag())
+	p.printList = append(p.printList, string(p.colorizeTag()))
 
 	if p.CurrentTag.Bytes[len(p.CurrentTag.Bytes)-2] != '/' {
 		p.Indentation++
 	}
+
+	return nil
 }
 
 func (p *Processor) downIndent() {

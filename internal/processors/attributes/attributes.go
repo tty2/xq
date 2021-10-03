@@ -6,7 +6,6 @@ package attributes
 import (
 	"bufio"
 	"errors"
-	"fmt"
 	"io"
 	"strings"
 
@@ -16,9 +15,9 @@ import (
 type (
 	// Processor is an attrubute processor. Keeps needed attributes to process data and handle attribute data.
 	Processor struct {
-		queryPath            []domain.Step
-		attribute            string
-		targetAttributesList []string
+		queryPath []domain.Step
+		attribute string
+		printList []string
 	}
 )
 
@@ -38,34 +37,41 @@ func NewProcessor(path []domain.Step, attribute string) (*Processor, error) {
 }
 
 // Process reads the data from `r` reader and processes it.
-func (p *Processor) Process(r *bufio.Reader) error {
+func (p *Processor) Process(r *bufio.Reader) chan string {
 	buf := make([]byte, 0, 4*1024)
+	ch := make(chan string)
 
-	for {
-		n, err := r.Read(buf[:cap(buf)])
-		if err != nil {
-			if err == io.EOF {
-				break
+	go func() {
+		defer close(ch)
+		for {
+			n, err := r.Read(buf[:cap(buf)])
+			if err != nil {
+				if err == io.EOF {
+					break
+				}
+				ch <- err.Error()
+
+				return
 			}
 
-			return err
+			buf = buf[:n]
+
+			err = p.process(buf)
+			if err != nil {
+				ch <- err.Error()
+
+				return
+			}
+
+			for i := range p.printList {
+				ch <- p.printList[i]
+			}
 		}
-
-		buf = buf[:n]
-
-		p.process(buf)
-	}
-
-	p.printAttrubutes()
+	}()
 
 	return nil
 }
 
-func (p *Processor) printAttrubutes() {
-	for i := range p.targetAttributesList {
-		fmt.Println(p.targetAttributesList[i]) // nolint forbidigo: the purpose of the function is print to stdout
-	}
-}
-
-func (p *Processor) process(chunk []byte) {
+func (p *Processor) process(chunk []byte) error {
+	return nil
 }
