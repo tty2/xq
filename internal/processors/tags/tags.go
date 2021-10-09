@@ -32,6 +32,7 @@ type (
 		closed   bool
 		skip     bool
 		brackets int
+		single   bool
 	}
 )
 
@@ -131,7 +132,7 @@ func (p *Processor) addSymbolIntoTag(s byte) error {
 
 	p.updatePrintList()
 
-	if p.currentTag.skip {
+	if p.currentTag.skip || p.currentTag.single {
 		return nil
 	}
 
@@ -140,6 +141,10 @@ func (p *Processor) addSymbolIntoTag(s byte) error {
 
 func (p *Processor) processCurrentTag() error {
 	p.markIfSkip()
+
+	if p.currentTag.skip {
+		return nil
+	}
 
 	tg := domain.Tag{
 		Bytes: p.currentTag.bytes,
@@ -157,13 +162,13 @@ func (p *Processor) processCurrentTag() error {
 }
 
 func (p *Processor) markIfSkip() {
-	if p.currentTag.bytes[len(p.currentTag.bytes)-2] == '/' {
-		p.currentTag.skip = true
-	}
-	if p.currentTag.bytes[1] == '?' {
-		p.currentTag.skip = true
-	}
-	if p.currentTag.bytes[1] == '!' {
+	switch {
+	case
+		p.currentTag.bytes[len(p.currentTag.bytes)-2] == '/':
+		p.currentTag.single = true
+	case
+		p.currentTag.bytes[1] == '?',
+		p.currentTag.bytes[1] == '!':
 		p.currentTag.skip = true
 	}
 }
