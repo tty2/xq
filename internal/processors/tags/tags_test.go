@@ -275,7 +275,8 @@ func TestMarkIfSkip(t *testing.T) {
 
 		p.markIfSkip()
 
-		rq.True(p.currentTag.skip)
+		rq.False(p.currentTag.skip)
+		rq.True(p.currentTag.single)
 	})
 
 	t.Run("close tag: question mark", func(t *testing.T) {
@@ -411,7 +412,8 @@ func TestProcessCurrentTag(t *testing.T) {
 		err := p.processCurrentTag()
 		rq.NoError(err)
 		rq.Equal("tagname", p.currentTag.name)
-		rq.True(p.currentTag.skip)
+		rq.False(p.currentTag.skip)
+		rq.True(p.currentTag.single)
 	})
 }
 

@@ -147,7 +147,8 @@ func (p *Processor) startTag(b byte) {
 func (p *Processor) closeTag(b byte) error {
 	p.CurrentTag.Bytes = append(p.CurrentTag.Bytes, b)
 
-	if b == symbol.CloseBracket {
+	switch b {
+	case symbol.CloseBracket:
 		p.CurrentTag.Brackets--
 
 		if p.CurrentTag.Brackets > 0 {
@@ -160,7 +161,7 @@ func (p *Processor) closeTag(b byte) error {
 			return err
 		}
 		p.SkipData = true // skip if there are empty symbol beeween close tag and new data
-	} else if b == symbol.OpenBracket {
+	case symbol.OpenBracket:
 		p.CurrentTag.Brackets++
 	}
 
