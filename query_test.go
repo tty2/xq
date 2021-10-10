@@ -33,7 +33,7 @@ func TestGetStep(t *testing.T) {
 	})
 }
 
-func TestSeparateAttribute(t *testing.T) {
+func TestGetAttribute(t *testing.T) {
 	t.Parallel()
 
 	t.Run("ok", func(t *testing.T) {
@@ -45,14 +45,12 @@ func TestSeparateAttribute(t *testing.T) {
 		}
 
 		q.path = q.getPath()
+		rq.Len(q.path, 2)
 
 		rq.Len(q.path, 2)
 
-		res := q.separateAttribute()
-
-		rq.Len(res, 2)
-		rq.Equal("tag2", res[0])
-		rq.Equal("attr", res[1])
+		res := q.getAttribute()
+		rq.Equal("attr", res)
 	})
 }
 

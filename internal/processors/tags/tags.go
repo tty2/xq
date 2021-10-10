@@ -17,13 +17,18 @@ import (
 type (
 	// Processor is a tag processor. Keeps needed attributes to process data and handle tag data.
 	Processor struct {
-		insideTag bool
-		queryPath []domain.Step
-		// queryAttribute   string
+		insideTag        bool
 		currentPath      []string
 		currentTag       tag
 		printtedTagsList []string
 		printList        []string
+		query            query
+	}
+
+	query struct {
+		tagsPath   []domain.Step
+		attribute  string
+		searchType domain.SearchType
 	}
 
 	tag struct {
@@ -37,13 +42,17 @@ type (
 )
 
 // NewProcessor creates a new Processor with needed attributes.
-func NewProcessor(path []domain.Step) (*Processor, error) {
+func NewProcessor(path []domain.Step, attribute string, search domain.SearchType) (*Processor, error) {
 	if len(path) == 0 {
 		return nil, errors.New("query path must not be empty")
 	}
 
 	return &Processor{
-		queryPath: path,
+		query: query{
+			tagsPath:   path,
+			attribute:  attribute,
+			searchType: search,
+		},
 	}, nil
 }
 
@@ -174,7 +183,7 @@ func (p *Processor) markIfSkip() {
 }
 
 func (p *Processor) updatePrintList() {
-	if !domain.PathsMatch(p.queryPath, p.currentPath) {
+	if !domain.PathsMatch(p.query.tagsPath, p.currentPath) {
 		return
 	}
 
@@ -182,7 +191,7 @@ func (p *Processor) updatePrintList() {
 		return
 	}
 	// step back after deeper nesting tag with close tag (queryPath == currentPath)
-	if p.queryPath[len(p.queryPath)-1].Name == p.currentTag.name {
+	if p.query.tagsPath[len(p.query.tagsPath)-1].Name == p.currentTag.name {
 		return
 	}
 	p.printList = append(p.printList, p.currentTag.name)

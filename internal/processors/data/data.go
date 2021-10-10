@@ -156,7 +156,7 @@ func (p *Processor) closeTag(b byte) error {
 		}
 
 		p.InsideTag = false
-		err := p.printTag()
+		err := p.addToPrintList()
 		if err != nil {
 			return err
 		}
@@ -168,7 +168,7 @@ func (p *Processor) closeTag(b byte) error {
 	return nil
 }
 
-func (p *Processor) printTag() error {
+func (p *Processor) addToPrintList() error {
 	if len(p.CurrentTag.Bytes) < minTagSize {
 		return fmt.Errorf("tag size is too small = %d, tag is `%s`", len(p.CurrentTag.Bytes), p.CurrentTag.Bytes)
 	}
