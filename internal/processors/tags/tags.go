@@ -14,30 +14,30 @@ import (
 	"github.com/tty2/xq/pkg/slice"
 )
 
+var errServiceTag = errors.New("not a tag or service tag")
+
 type (
 	// Processor is a tag processor. Keeps needed attributes to process data and handle tag data.
 	Processor struct {
 		insideTag        bool
 		currentPath      []string
-		currentTag       tag
-		printtedTagsList []string
 		printList        []string
+		printtedTagsList []string
+		currentTag       tag
 		query            query
 	}
 
 	query struct {
-		tagsPath   []domain.Step
+		path       []domain.Step
 		attribute  string
 		searchType domain.SearchType
 	}
 
 	tag struct {
 		bytes    []byte
-		name     string
-		closed   bool
-		skip     bool
-		brackets int
-		single   bool
+		name     string // tagname
+		closed   bool   // </tagname>
+		brackets int    // stack to keep track open and close brackets
 	}
 )
 
@@ -49,7 +49,7 @@ func NewProcessor(path []domain.Step, attribute string, search domain.SearchType
 
 	return &Processor{
 		query: query{
-			tagsPath:   path,
+			path:       path,
 			attribute:  attribute,
 			searchType: search,
 		},
@@ -136,12 +136,16 @@ func (p *Processor) addSymbolIntoTag(s byte) error {
 
 	err := p.processCurrentTag()
 	if err != nil {
+		if errors.Is(err, errServiceTag) {
+			return nil
+		}
+
 		return err
 	}
 
 	p.updatePrintList()
 
-	if p.currentTag.skip || p.currentTag.single {
+	if p.currentTag.bytes[len(p.currentTag.bytes)-2] == '/' { // singe tag
 		return nil
 	}
 
@@ -149,10 +153,9 @@ func (p *Processor) addSymbolIntoTag(s byte) error {
 }
 
 func (p *Processor) processCurrentTag() error {
-	p.markIfSkip()
-
-	if p.currentTag.skip {
-		return nil
+	// cdata or service tags
+	if p.currentTag.bytes[1] == '?' || p.currentTag.bytes[1] == '!' {
+		return errServiceTag
 	}
 
 	tg := domain.Tag{
@@ -170,20 +173,8 @@ func (p *Processor) processCurrentTag() error {
 	return nil
 }
 
-func (p *Processor) markIfSkip() {
-	switch {
-	case
-		p.currentTag.bytes[len(p.currentTag.bytes)-2] == '/':
-		p.currentTag.single = true
-	case
-		p.currentTag.bytes[1] == '?',
-		p.currentTag.bytes[1] == '!':
-		p.currentTag.skip = true
-	}
-}
-
 func (p *Processor) updatePrintList() {
-	if !domain.PathsMatch(p.query.tagsPath, p.currentPath) {
+	if !domain.PathsMatch(p.query.path, p.currentPath) {
 		return
 	}
 
@@ -191,7 +182,7 @@ func (p *Processor) updatePrintList() {
 		return
 	}
 	// step back after deeper nesting tag with close tag (queryPath == currentPath)
-	if p.query.tagsPath[len(p.query.tagsPath)-1].Name == p.currentTag.name {
+	if p.query.path[len(p.query.path)-1].Name == p.currentTag.name {
 		return
 	}
 	p.printList = append(p.printList, p.currentTag.name)
