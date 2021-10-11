@@ -10,6 +10,7 @@ import (
 
 type query struct {
 	request    string
+	firstArg   string // xq <firstArg> <path.to.tag>
 	path       []domain.Step
 	attribute  string
 	searchType domain.SearchType
@@ -23,18 +24,12 @@ func getQuery() query {
 		q = query{
 			request: args[0],
 		}
-		q.searchType = domain.TagValue
 	case 2:
 		q = query{
-			request: args[1],
+			firstArg: args[0],
+			request:  args[1],
 		}
-		switch args[0] {
-		case "tags":
-			q.searchType = domain.TagList
-		case "attr":
-			q.searchType = domain.AttrList
-		}
-	default:
+	default: // ex: only xq is called without any args
 		q = query{
 			request:    ".",
 			searchType: domain.TagValue,
@@ -45,6 +40,15 @@ func getQuery() query {
 }
 
 func (q *query) parse() {
+	switch q.firstArg {
+	case "":
+		q.searchType = domain.TagValue
+	case "tags":
+		q.searchType = domain.TagList
+	case "attr":
+		q.searchType = domain.AttrList
+	}
+
 	q.path = q.getPath()
 	if len(q.path) == 0 {
 		return

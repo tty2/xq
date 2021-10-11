@@ -5,6 +5,7 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/require"
+	"github.com/tty2/xq/internal/domain"
 )
 
 func TestGetStep(t *testing.T) {
@@ -121,6 +122,7 @@ func TestGetQuery(t *testing.T) {
 		q := getQuery()
 
 		rq.Equal(".", q.request)
+		rq.Empty(q.firstArg)
 	})
 
 	t.Run("path only", func(t *testing.T) {
@@ -132,17 +134,31 @@ func TestGetQuery(t *testing.T) {
 		q := getQuery()
 
 		rq.Equal(".tag1.tag2", q.request)
+		rq.Empty(q.firstArg)
 	})
 
 	t.Run("path only", func(t *testing.T) {
 		t.Parallel()
 		rq := require.New(t)
 
-		os.Args = []string{"xq", "tag", ".tag1.tag2"}
+		os.Args = []string{"xq", "tags", ".tag1.tag2"}
 
 		q := getQuery()
 
 		rq.Equal(".tag1.tag2", q.request)
+		rq.Equal("tags", q.firstArg)
+	})
+
+	t.Run("path only", func(t *testing.T) {
+		t.Parallel()
+		rq := require.New(t)
+
+		os.Args = []string{"xq", "attr", ".tag1.tag2#val"}
+
+		q := getQuery()
+
+		rq.Equal(".tag1.tag2#val", q.request)
+		rq.Equal("attr", q.firstArg)
 	})
 }
 
@@ -160,6 +176,7 @@ func TestParseQuery(t *testing.T) {
 		q.parse()
 
 		rq.Len(q.path, 0)
+		rq.Equal(domain.TagValue, q.searchType)
 	})
 
 	t.Run("_tags only", func(t *testing.T) {
@@ -175,6 +192,41 @@ func TestParseQuery(t *testing.T) {
 		rq.Len(q.path, 2)
 		rq.Equal("tag1", q.path[0].Name)
 		rq.Equal("tag2", q.path[1].Name)
+		rq.Equal(domain.TagValue, q.searchType)
+	})
+
+	t.Run("_tags only: tag list", func(t *testing.T) {
+		t.Parallel()
+		rq := require.New(t)
+
+		q := query{
+			request:  ".tag1.tag2",
+			firstArg: "tags",
+		}
+
+		q.parse()
+
+		rq.Len(q.path, 2)
+		rq.Equal("tag1", q.path[0].Name)
+		rq.Equal("tag2", q.path[1].Name)
+		rq.Equal(domain.TagList, q.searchType)
+	})
+
+	t.Run("_tags only: attr list", func(t *testing.T) {
+		t.Parallel()
+		rq := require.New(t)
+
+		q := query{
+			request:  ".tag1.tag2",
+			firstArg: "attr",
+		}
+
+		q.parse()
+
+		rq.Len(q.path, 2)
+		rq.Equal("tag1", q.path[0].Name)
+		rq.Equal("tag2", q.path[1].Name)
+		rq.Equal(domain.AttrList, q.searchType)
 	})
 
 	t.Run("with attribute", func(t *testing.T) {
@@ -191,5 +243,6 @@ func TestParseQuery(t *testing.T) {
 		rq.Equal("tag1", q.path[0].Name)
 		rq.Equal("tag2", q.path[1].Name)
 		rq.Equal("attr_name", q.attribute)
+		rq.Equal(domain.AttrValue, q.searchType)
 	})
 }
