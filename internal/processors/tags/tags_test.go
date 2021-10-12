@@ -480,4 +480,101 @@ func TestAddSymbolIntoTag(t *testing.T) {
 		rq.Len(p.currentPath, 2)
 		rq.Equal("tag", p.currentPath[1])
 	})
+
+	t.Run("service tag", func(t *testing.T) {
+		t.Parallel()
+
+		p := Processor{
+			insideTag: true,
+			currentTag: tag{
+				bytes:    []byte("<!-- some comment here <b> with tags inside </b>"),
+				brackets: 1, // <
+			},
+		}
+
+		rq := require.New(t)
+
+		err := p.addSymbolIntoTag(symbol.CloseBracket)
+		rq.NoError(err)
+		rq.Equal("<!-- some comment here <b> with tags inside </b>>", string(p.currentTag.bytes))
+		rq.False(p.insideTag)
+		rq.Equal(0, p.currentTag.brackets)
+	})
+
+	t.Run("single tag", func(t *testing.T) {
+		t.Parallel()
+
+		p := Processor{
+			insideTag: true,
+			currentTag: tag{
+				bytes:    []byte(`<tagname attr="value" /`),
+				brackets: 1, // <
+			},
+			query: query{
+				path: []domain.Step{
+					{
+						Name:  "tagname",
+						Index: -1,
+					},
+				},
+			},
+		}
+
+		rq := require.New(t)
+
+		err := p.addSymbolIntoTag(symbol.CloseBracket)
+		rq.NoError(err)
+		rq.Equal(`<tagname attr="value" />`, string(p.currentTag.bytes))
+		rq.False(p.insideTag)
+		rq.Equal(0, p.currentTag.brackets)
+	})
+}
+
+func TestProcess(t *testing.T) {
+	t.Parallel()
+
+	t.Run("ok", func(t *testing.T) {
+		t.Parallel()
+		rq := require.New(t)
+
+		p := Processor{
+			query: query{
+				path: []domain.Step{},
+			},
+		}
+
+		err := p.process([]byte(`t</tagname attr="value"`))
+		rq.NoError(err)
+	})
+}
+
+func TestNewProcessor(t *testing.T) {
+	t.Parallel()
+
+	t.Run("error: empty path", func(t *testing.T) {
+		t.Parallel()
+		rq := require.New(t)
+
+		p, err := NewProcessor([]domain.Step{}, "", domain.TagList)
+		rq.Error(err)
+		rq.Nil(p)
+	})
+
+	t.Run("ok", func(t *testing.T) {
+		t.Parallel()
+		rq := require.New(t)
+
+		p, err := NewProcessor([]domain.Step{
+			{
+				Name:  "tagname",
+				Index: -1,
+			},
+		}, "test", domain.TagList)
+
+		rq.NoError(err)
+		rq.Len(p.query.path, 1)
+		rq.Equal("test", p.query.attribute)
+		rq.Equal(domain.TagList, p.query.searchType)
+
+	})
 }
