@@ -575,6 +575,5 @@ func TestNewProcessor(t *testing.T) {
 		rq.Len(p.query.path, 1)
 		rq.Equal("test", p.query.attribute)
 		rq.Equal(domain.TagList, p.query.searchType)
-
 	})
 }
