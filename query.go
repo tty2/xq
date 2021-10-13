@@ -9,9 +9,11 @@ import (
 )
 
 type query struct {
-	request   string
-	path      []domain.Step
-	attribute string
+	request    string
+	firstArg   string // xq <firstArg> <path.to.tag>
+	path       []domain.Step
+	attribute  string
+	searchType domain.SearchType
 }
 
 func getQuery() query {
@@ -24,11 +26,13 @@ func getQuery() query {
 		}
 	case 2:
 		q = query{
-			request: args[1],
+			firstArg: args[0],
+			request:  args[1],
 		}
-	default:
+	default: // ex: only xq is called without any args
 		q = query{
-			request: ".",
+			request:    ".",
+			searchType: domain.TagValue,
 		}
 	}
 
@@ -36,20 +40,24 @@ func getQuery() query {
 }
 
 func (q *query) parse() {
-	q.path = q.getPath()
+	switch q.firstArg {
+	case "":
+		q.searchType = domain.TagValue
+	case "tags":
+		q.searchType = domain.TagList
+	case "attr":
+		q.searchType = domain.AttrList
+	}
 
+	q.path = q.getPath()
 	if len(q.path) == 0 {
 		return
 	}
 
-	sa := q.separateAttribute()
-	if len(sa) == 1 {
-		return
+	q.attribute = q.getAttribute()
+	if q.attribute != "" {
+		q.searchType = domain.AttrValue
 	}
-
-	q.path[len(q.path)-1].Name = sa[0]
-
-	q.attribute = sa[1]
 }
 
 func (q *query) getPath() []domain.Step {
@@ -65,7 +73,8 @@ func (q *query) getPath() []domain.Step {
 
 	steps := []domain.Step{}
 	for i := range path {
-		steps = append(steps, getStep(path[i]))
+		step := getStep(path[i])
+		steps = append(steps, step)
 	}
 
 	return steps
@@ -75,7 +84,11 @@ func getStep(s string) domain.Step {
 	var name string
 	var inBrackets bool
 	var num []byte
-	for i := range s {
+	var i int
+	for ; i < len(s); i++ {
+		if s[i] == '#' {
+			break
+		}
 		if inBrackets {
 			if s[i] == ']' {
 				break
@@ -91,7 +104,7 @@ func getStep(s string) domain.Step {
 	count, err := strconv.Atoi(string(num))
 	if err != nil {
 		count = -1
-		name = s
+		name = s[:i]
 	}
 
 	return domain.Step{
@@ -100,6 +113,11 @@ func getStep(s string) domain.Step {
 	}
 }
 
-func (q *query) separateAttribute() []string {
-	return strings.Split(q.path[len(q.path)-1].Name, "#")
+func (q *query) getAttribute() string {
+	sa := strings.Split(q.request, "#")
+	if len(sa) != 2 {
+		return ""
+	}
+
+	return sa[1]
 }

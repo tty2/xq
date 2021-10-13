@@ -10,6 +10,7 @@ import (
 func main() {
 	q := getQuery()
 	q.parse()
+
 	proc, err := getProcessor(q)
 	if err != nil {
 		log.Fatal(err)

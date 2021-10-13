@@ -27,7 +27,7 @@ test: ## Run go tests for files with tests.
 	@if [ $$(cat fixtures/hashes.txt | sed -n 9p) = $$(cat fixtures/flat.xml | go run main.go processor.go query.go tags .PurchaseOrder.Items.Item.ShipDate | md5sum | awk '{print $$1}') ]; then echo "PASSED"; else exit 125; fi
 
 beautify:
-	gofumpt -l -w $$(go list -f {{.Dir}} ./... | grep -v /vendor/)
+	gofumpt -l -w ./$$(go list -f {{.Dir}} ./... | grep -v /vendor/)
 
 
 check: lint test ## Run full check: lint and test.

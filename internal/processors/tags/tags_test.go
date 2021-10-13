@@ -1,6 +1,7 @@
 package tags
 
 import (
+	"errors"
 	"testing"
 
 	"github.com/stretchr/testify/require"
@@ -77,22 +78,24 @@ func TestUpdateTagsList(t *testing.T) {
 		t.Parallel()
 
 		p := Processor{
-			queryPath: []domain.Step{
-				{
-					Name:  "1",
-					Index: -1,
-				},
-				{
-					Name:  "2",
-					Index: -1,
-				},
-				{
-					Name:  "3",
-					Index: -1,
-				},
-				{
-					Name:  "4",
-					Index: -1,
+			query: query{
+				path: []domain.Step{
+					{
+						Name:  "1",
+						Index: -1,
+					},
+					{
+						Name:  "2",
+						Index: -1,
+					},
+					{
+						Name:  "3",
+						Index: -1,
+					},
+					{
+						Name:  "4",
+						Index: -1,
+					},
 				},
 			},
 			currentPath: []string{"1", "2", "3"},
@@ -113,22 +116,24 @@ func TestUpdateTagsList(t *testing.T) {
 		t.Parallel()
 
 		p := Processor{
-			queryPath: []domain.Step{
-				{
-					Name:  "1",
-					Index: -1,
-				},
-				{
-					Name:  "2",
-					Index: -1,
-				},
-				{
-					Name:  "3",
-					Index: -1,
-				},
-				{
-					Name:  "4",
-					Index: -1,
+			query: query{
+				path: []domain.Step{
+					{
+						Name:  "1",
+						Index: -1,
+					},
+					{
+						Name:  "2",
+						Index: -1,
+					},
+					{
+						Name:  "3",
+						Index: -1,
+					},
+					{
+						Name:  "4",
+						Index: -1,
+					},
 				},
 			},
 			currentPath: []string{"1", "2", "3", "4", "5"},
@@ -150,22 +155,24 @@ func TestUpdateTagsList(t *testing.T) {
 		t.Parallel()
 
 		p := Processor{
-			queryPath: []domain.Step{
-				{
-					Name:  "1",
-					Index: -1,
-				},
-				{
-					Name:  "2",
-					Index: -1,
-				},
-				{
-					Name:  "3",
-					Index: -1,
-				},
-				{
-					Name:  "4",
-					Index: -1,
+			query: query{
+				path: []domain.Step{
+					{
+						Name:  "1",
+						Index: -1,
+					},
+					{
+						Name:  "2",
+						Index: -1,
+					},
+					{
+						Name:  "3",
+						Index: -1,
+					},
+					{
+						Name:  "4",
+						Index: -1,
+					},
 				},
 			},
 			currentPath: []string{"1", "2", "3", "4"},
@@ -187,22 +194,24 @@ func TestUpdateTagsList(t *testing.T) {
 		t.Parallel()
 
 		p := Processor{
-			queryPath: []domain.Step{
-				{
-					Name:  "1",
-					Index: -1,
-				},
-				{
-					Name:  "2",
-					Index: -1,
-				},
-				{
-					Name:  "3",
-					Index: -1,
-				},
-				{
-					Name:  "4",
-					Index: -1,
+			query: query{
+				path: []domain.Step{
+					{
+						Name:  "1",
+						Index: -1,
+					},
+					{
+						Name:  "2",
+						Index: -1,
+					},
+					{
+						Name:  "3",
+						Index: -1,
+					},
+					{
+						Name:  "4",
+						Index: -1,
+					},
 				},
 			},
 			currentPath: []string{"1", "2", "3", "4"},
@@ -224,22 +233,24 @@ func TestUpdateTagsList(t *testing.T) {
 		t.Parallel()
 
 		p := Processor{
-			queryPath: []domain.Step{
-				{
-					Name:  "1",
-					Index: -1,
-				},
-				{
-					Name:  "2",
-					Index: -1,
-				},
-				{
-					Name:  "3",
-					Index: -1,
-				},
-				{
-					Name:  "4",
-					Index: -1,
+			query: query{
+				path: []domain.Step{
+					{
+						Name:  "1",
+						Index: -1,
+					},
+					{
+						Name:  "2",
+						Index: -1,
+					},
+					{
+						Name:  "3",
+						Index: -1,
+					},
+					{
+						Name:  "4",
+						Index: -1,
+					},
 				},
 			},
 			currentPath: []string{"1", "2", "3", "4"},
@@ -255,79 +266,6 @@ func TestUpdateTagsList(t *testing.T) {
 		p.updatePrintList()
 		rq.Len(p.printList, 3)
 		rq.Len(p.printtedTagsList, 3)
-	})
-}
-
-func TestMarkIfSkip(t *testing.T) {
-	t.Parallel()
-
-	t.Run("close tag: dash", func(t *testing.T) {
-		t.Parallel()
-
-		p := Processor{
-			currentTag: tag{
-				bytes: []byte("<test/>"),
-			},
-		}
-
-		rq := require.New(t)
-		rq.False(p.currentTag.skip)
-
-		p.markIfSkip()
-
-		rq.False(p.currentTag.skip)
-		rq.True(p.currentTag.single)
-	})
-
-	t.Run("close tag: question mark", func(t *testing.T) {
-		t.Parallel()
-
-		p := Processor{
-			currentTag: tag{
-				bytes: []byte("<?xml there is a data here>"),
-			},
-		}
-
-		rq := require.New(t)
-		rq.False(p.currentTag.skip)
-
-		p.markIfSkip()
-
-		rq.True(p.currentTag.skip)
-	})
-
-	t.Run("close tag: question mark", func(t *testing.T) {
-		t.Parallel()
-
-		p := Processor{
-			currentTag: tag{
-				bytes: []byte("<!-- comment here-->"),
-			},
-		}
-
-		rq := require.New(t)
-		rq.False(p.currentTag.skip)
-
-		p.markIfSkip()
-
-		rq.True(p.currentTag.skip)
-	})
-
-	t.Run("general tag", func(t *testing.T) {
-		t.Parallel()
-
-		p := Processor{
-			currentTag: tag{
-				bytes: []byte("<tag>"),
-			},
-		}
-
-		rq := require.New(t)
-		rq.False(p.currentTag.skip)
-
-		p.markIfSkip()
-
-		rq.False(p.currentTag.skip)
 	})
 }
 
@@ -347,6 +285,36 @@ func TestProcessCurrentTag(t *testing.T) {
 
 		err := p.processCurrentTag()
 		rq.Error(err)
+	})
+
+	t.Run("err: service tag", func(t *testing.T) {
+		t.Parallel()
+
+		p := Processor{
+			currentTag: tag{
+				bytes: []byte(`<?xml version="1.0" encoding="UTF-8"?>`),
+			},
+		}
+
+		rq := require.New(t)
+
+		err := p.processCurrentTag()
+		rq.True(errors.Is(err, errServiceTag))
+	})
+
+	t.Run("err: cdata", func(t *testing.T) {
+		t.Parallel()
+
+		p := Processor{
+			currentTag: tag{
+				bytes: []byte(`<![CDATA[Two patients (Martin Brest and Rudi Wurlitzer).]]>`),
+			},
+		}
+
+		rq := require.New(t)
+
+		err := p.processCurrentTag()
+		rq.True(errors.Is(err, errServiceTag))
 	})
 
 	t.Run("err: don't start from open bracket", func(t *testing.T) {
@@ -412,8 +380,6 @@ func TestProcessCurrentTag(t *testing.T) {
 		err := p.processCurrentTag()
 		rq.NoError(err)
 		rq.Equal("tagname", p.currentTag.name)
-		rq.False(p.currentTag.skip)
-		rq.True(p.currentTag.single)
 	})
 }
 
@@ -482,17 +448,19 @@ func TestAddSymbolIntoTag(t *testing.T) {
 		t.Parallel()
 
 		p := Processor{
-			insideTag: true,
-			queryPath: []domain.Step{ // queryPath can't be empty: it is checked on init processor
-				{
-					Name:  "tags",
-					Index: -1,
-				},
-			},
+			insideTag:   true,
 			currentPath: []string{"tags"},
 			currentTag: tag{
 				bytes:    []byte("<tag"),
 				brackets: 1,
+			},
+			query: query{
+				path: []domain.Step{ // query.path can't be empty: it is checked on init processor
+					{
+						Name:  "tags",
+						Index: -1,
+					},
+				},
 			},
 		}
 
@@ -511,5 +479,101 @@ func TestAddSymbolIntoTag(t *testing.T) {
 		rq.Equal("tag", p.printList[0])
 		rq.Len(p.currentPath, 2)
 		rq.Equal("tag", p.currentPath[1])
+	})
+
+	t.Run("service tag", func(t *testing.T) {
+		t.Parallel()
+
+		p := Processor{
+			insideTag: true,
+			currentTag: tag{
+				bytes:    []byte("<!-- some comment here <b> with tags inside </b>"),
+				brackets: 1, // <
+			},
+		}
+
+		rq := require.New(t)
+
+		err := p.addSymbolIntoTag(symbol.CloseBracket)
+		rq.NoError(err)
+		rq.Equal("<!-- some comment here <b> with tags inside </b>>", string(p.currentTag.bytes))
+		rq.False(p.insideTag)
+		rq.Equal(0, p.currentTag.brackets)
+	})
+
+	t.Run("single tag", func(t *testing.T) {
+		t.Parallel()
+
+		p := Processor{
+			insideTag: true,
+			currentTag: tag{
+				bytes:    []byte(`<tagname attr="value" /`),
+				brackets: 1, // <
+			},
+			query: query{
+				path: []domain.Step{
+					{
+						Name:  "tagname",
+						Index: -1,
+					},
+				},
+			},
+		}
+
+		rq := require.New(t)
+
+		err := p.addSymbolIntoTag(symbol.CloseBracket)
+		rq.NoError(err)
+		rq.Equal(`<tagname attr="value" />`, string(p.currentTag.bytes))
+		rq.False(p.insideTag)
+		rq.Equal(0, p.currentTag.brackets)
+	})
+}
+
+func TestProcess(t *testing.T) {
+	t.Parallel()
+
+	t.Run("ok", func(t *testing.T) {
+		t.Parallel()
+		rq := require.New(t)
+
+		p := Processor{
+			query: query{
+				path: []domain.Step{},
+			},
+		}
+
+		err := p.process([]byte(`t</tagname attr="value"`))
+		rq.NoError(err)
+	})
+}
+
+func TestNewProcessor(t *testing.T) {
+	t.Parallel()
+
+	t.Run("error: empty path", func(t *testing.T) {
+		t.Parallel()
+		rq := require.New(t)
+
+		p, err := NewProcessor([]domain.Step{}, "", domain.TagList)
+		rq.Error(err)
+		rq.Nil(p)
+	})
+
+	t.Run("ok", func(t *testing.T) {
+		t.Parallel()
+		rq := require.New(t)
+
+		p, err := NewProcessor([]domain.Step{
+			{
+				Name:  "tagname",
+				Index: -1,
+			},
+		}, "test", domain.TagList)
+
+		rq.NoError(err)
+		rq.Len(p.query.path, 1)
+		rq.Equal("test", p.query.attribute)
+		rq.Equal(domain.TagList, p.query.searchType)
 	})
 }
