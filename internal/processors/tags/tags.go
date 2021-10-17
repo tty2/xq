@@ -19,12 +19,12 @@ var errServiceTag = errors.New("not a tag or service tag")
 type (
 	// Processor is a tag processor. Keeps needed attributes to process data and handle tag data.
 	Processor struct {
-		insideTag        bool
-		currentPath      []string
-		printList        []string
-		printtedTagsList []string
-		currentTag       tag
-		query            query
+		insideTag    bool
+		currentPath  []string
+		printList    []string
+		printtedList []string
+		currentTag   tag
+		query        query
 	}
 
 	query struct {
@@ -178,15 +178,20 @@ func (p *Processor) updatePrintList() {
 		return
 	}
 
-	if slice.ContainsString(p.printtedTagsList, p.currentTag.name) {
+	if slice.ContainsString(p.printtedList, p.currentTag.name) {
 		return
 	}
 	// step back after deeper nesting tag with close tag (queryPath == currentPath)
 	if p.query.path[len(p.query.path)-1].Name == p.currentTag.name {
 		return
 	}
-	p.printList = append(p.printList, p.currentTag.name)
-	p.printtedTagsList = append(p.printtedTagsList, p.currentTag.name)
+
+	if p.query.searchType == domain.TagList {
+		p.printList = append(p.printList, p.currentTag.name)
+		p.printtedList = append(p.printtedList, p.currentTag.name)
+	} else if p.query.searchType == domain.AttrList {
+		p.printList = pickAttributesNames(p.currentTag.bytes)
+	}
 }
 
 func (p *Processor) updatePath() error {
@@ -206,4 +211,54 @@ func (p *Processor) updatePath() error {
 	p.currentPath = append(p.currentPath, p.currentTag.name)
 
 	return nil
+}
+
+func pickAttributesNames(tag []byte) []string {
+	if len(tag) == 0 || tag[0] != symbol.OpenBracket {
+		return nil
+	}
+
+	var i int
+	// skip tag name
+	for ; i < len(tag) && tag[i] != ' '; i++ {
+	}
+
+	var isAttrName bool
+	attrs := []string{}
+	attrName := []byte{}
+	quotes := []byte{}
+	for ; i < len(tag); i++ {
+		if symbol.IsQuote(tag[i]) {
+			if len(quotes) == 0 {
+				quotes = append(quotes, tag[i])
+				continue
+			}
+
+			if tag[i] == quotes[0] {
+				quotes = []byte{}
+			} else {
+				quotes = append(quotes, tag[i])
+			}
+		}
+
+		if len(quotes) > 0 {
+			continue
+		}
+
+		if tag[i] == '=' {
+			attrs = append(attrs, string(attrName))
+			isAttrName = false
+			attrName = []byte{}
+			continue
+		}
+		if isAttrName {
+			attrName = append(attrName, tag[i])
+			continue
+		}
+		if tag[i] == ' ' {
+			isAttrName = true
+		}
+	}
+
+	return attrs
 }

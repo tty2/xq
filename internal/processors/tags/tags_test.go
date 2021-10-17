@@ -109,7 +109,7 @@ func TestUpdateTagsList(t *testing.T) {
 
 		p.updatePrintList()
 		rq.Len(p.printList, 0)
-		rq.Len(p.printtedTagsList, 0)
+		rq.Len(p.printtedList, 0)
 	})
 
 	t.Run("skip: current path greater than query", func(t *testing.T) {
@@ -140,15 +140,15 @@ func TestUpdateTagsList(t *testing.T) {
 			currentTag: tag{
 				name: "10",
 			},
-			printList:        []string{"6", "7"},
-			printtedTagsList: []string{"6", "7"},
+			printList:    []string{"6", "7"},
+			printtedList: []string{"6", "7"},
 		}
 
 		rq := require.New(t)
 
 		p.updatePrintList()
 		rq.Len(p.printList, 2)
-		rq.Len(p.printtedTagsList, 2)
+		rq.Len(p.printtedList, 2)
 	})
 
 	t.Run("skip: current path contains current tag name", func(t *testing.T) {
@@ -179,15 +179,15 @@ func TestUpdateTagsList(t *testing.T) {
 			currentTag: tag{
 				name: "7",
 			},
-			printList:        []string{"6", "7"},
-			printtedTagsList: []string{"6", "7"},
+			printList:    []string{"6", "7"},
+			printtedList: []string{"6", "7"},
 		}
 
 		rq := require.New(t)
 
 		p.updatePrintList()
 		rq.Len(p.printList, 2)
-		rq.Len(p.printtedTagsList, 2)
+		rq.Len(p.printtedList, 2)
 	})
 
 	t.Run("skip: step back from closed tag: last query name is the same as current tag", func(t *testing.T) {
@@ -218,15 +218,15 @@ func TestUpdateTagsList(t *testing.T) {
 			currentTag: tag{
 				name: "4",
 			},
-			printList:        []string{"6", "7"},
-			printtedTagsList: []string{"6", "7"},
+			printList:    []string{"6", "7"},
+			printtedList: []string{"6", "7"},
 		}
 
 		rq := require.New(t)
 
 		p.updatePrintList()
 		rq.Len(p.printList, 2)
-		rq.Len(p.printtedTagsList, 2)
+		rq.Len(p.printtedList, 2)
 	})
 
 	t.Run("add tag", func(t *testing.T) {
@@ -257,15 +257,15 @@ func TestUpdateTagsList(t *testing.T) {
 			currentTag: tag{
 				name: "8",
 			},
-			printList:        []string{"6", "7"},
-			printtedTagsList: []string{"6", "7"},
+			printList:    []string{"6", "7"},
+			printtedList: []string{"6", "7"},
 		}
 
 		rq := require.New(t)
 
 		p.updatePrintList()
 		rq.Len(p.printList, 3)
-		rq.Len(p.printtedTagsList, 3)
+		rq.Len(p.printtedList, 3)
 	})
 }
 
