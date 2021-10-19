@@ -19,12 +19,12 @@ var errServiceTag = errors.New("not a tag or service tag")
 type (
 	// Processor is a tag processor. Keeps needed attributes to process data and handle tag data.
 	Processor struct {
-		insideTag    bool
-		currentPath  []string
-		printList    []string
-		printtedList []string
-		currentTag   tag
-		query        query
+		insideTag   bool
+		currentPath []string
+		printList   []string
+		printedList []string
+		currentTag  tag
+		query       query
 	}
 
 	query struct {
@@ -178,7 +178,7 @@ func (p *Processor) updatePrintList() {
 		return
 	}
 
-	if slice.ContainsString(p.printtedList, p.currentTag.name) {
+	if slice.ContainsString(p.printedList, p.currentTag.name) {
 		return
 	}
 	// step back after deeper nesting tag with close tag (queryPath == currentPath)
@@ -188,7 +188,7 @@ func (p *Processor) updatePrintList() {
 
 	if p.query.searchType == domain.TagList {
 		p.printList = append(p.printList, p.currentTag.name)
-		p.printtedList = append(p.printtedList, p.currentTag.name)
+		p.printedList = append(p.printedList, p.currentTag.name)
 	} else if p.query.searchType == domain.AttrList {
 		p.printList = pickAttributesNames(p.currentTag.bytes)
 	}
