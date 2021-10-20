@@ -231,6 +231,7 @@ func pickAttributesNames(tag []byte) []string {
 		if symbol.IsQuote(tag[i]) {
 			if len(quotes) == 0 {
 				quotes = append(quotes, tag[i])
+
 				continue
 			}
 
@@ -249,10 +250,12 @@ func pickAttributesNames(tag []byte) []string {
 			attrs = append(attrs, string(attrName))
 			isAttrName = false
 			attrName = []byte{}
+
 			continue
 		}
 		if isAttrName {
 			attrName = append(attrName, tag[i])
+
 			continue
 		}
 		if tag[i] == ' ' {
