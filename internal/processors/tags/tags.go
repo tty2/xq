@@ -14,15 +14,12 @@ import (
 	"github.com/tty2/xq/pkg/slice"
 )
 
-var errServiceTag = errors.New("not a tag or service tag")
-
 type (
 	// Processor is a tag processor. Keeps needed attributes to process data and handle tag data.
 	Processor struct {
 		insideTag   bool
 		currentPath []string
 		printList   []string
-		printedList []string
 		currentTag  tag
 		query       query
 	}
@@ -82,12 +79,10 @@ func (p *Processor) Process(r *bufio.Reader) chan string {
 
 				return
 			}
+		}
 
-			for i := range p.printList {
-				ch <- p.printList[i]
-			}
-
-			p.printList = []string{}
+		for i := range p.printList {
+			ch <- p.printList[i]
 		}
 	}()
 
@@ -98,6 +93,19 @@ func (p *Processor) process(chunk []byte) error {
 	for i := range chunk {
 		if p.insideTag {
 			err := p.addSymbolIntoTag(chunk[i])
+			if err != nil {
+				return err
+			}
+
+			if p.currentTag.brackets > 0 {
+				continue
+			}
+
+			if p.skip() {
+				continue
+			}
+
+			err = p.processCurrentTag()
 			if err != nil {
 				return err
 			}
@@ -126,38 +134,26 @@ func (p *Processor) addSymbolIntoTag(s byte) error {
 	if s != symbol.CloseBracket {
 		return nil
 	}
-
 	p.currentTag.brackets--
-	if p.currentTag.brackets > 0 {
-		return nil
-	}
 
+	return nil
+}
+
+func (p *Processor) skip() bool {
+	if p.currentTag.brackets > 0 {
+		return true
+	}
 	p.insideTag = false
 
-	err := p.processCurrentTag()
-	if err != nil {
-		if errors.Is(err, errServiceTag) {
-			return nil
-		}
+	return p.currentTag.bytes[1] == '?' ||
+		p.currentTag.bytes[1] == '!'
+}
 
-		return err
-	}
-
-	p.updatePrintList()
-
-	if p.currentTag.bytes[len(p.currentTag.bytes)-2] == '/' { // singe tag
-		return nil
-	}
-
-	return p.updatePath()
+func (p *Processor) currentTagIsSingle() bool {
+	return p.currentTag.bytes[len(p.currentTag.bytes)-2] == '/'
 }
 
 func (p *Processor) processCurrentTag() error {
-	// cdata or service tags
-	if p.currentTag.bytes[1] == '?' || p.currentTag.bytes[1] == '!' {
-		return errServiceTag
-	}
-
 	tg := domain.Tag{
 		Bytes: p.currentTag.bytes,
 	}
@@ -170,7 +166,13 @@ func (p *Processor) processCurrentTag() error {
 	p.currentTag.closed = p.currentTag.bytes[1] == '/'
 	p.currentTag.name = tg.Name
 
-	return nil
+	p.updatePrintList()
+
+	if p.currentTagIsSingle() {
+		return nil
+	}
+
+	return p.updatePath()
 }
 
 func (p *Processor) updatePrintList() {
@@ -178,17 +180,17 @@ func (p *Processor) updatePrintList() {
 		return
 	}
 
-	if slice.ContainsString(p.printedList, p.currentTag.name) {
+	if slice.ContainsString(p.printList, p.currentTag.name) {
 		return
 	}
 	// step back after deeper nesting tag with close tag (queryPath == currentPath)
-	if p.query.path[len(p.query.path)-1].Name == p.currentTag.name {
+	ln := len(p.query.path) - 1
+	if ln >= 0 && p.query.path[ln].Name == p.currentTag.name {
 		return
 	}
 
 	if p.query.searchType == domain.TagList {
 		p.printList = append(p.printList, p.currentTag.name)
-		p.printedList = append(p.printedList, p.currentTag.name)
 	} else if p.query.searchType == domain.AttrList {
 		p.printList = pickAttributesNames(p.currentTag.bytes)
 	}
@@ -197,7 +199,7 @@ func (p *Processor) updatePrintList() {
 func (p *Processor) updatePath() error {
 	lastElement := len(p.currentPath) - 1
 
-	if p.currentTag.closed {
+	if lastElement >= 0 && p.currentTag.closed {
 		if p.currentPath[lastElement] != p.currentTag.name {
 			return fmt.Errorf("incorrect xml structure: the last open tag is %s, but close tag is %s",
 				p.currentPath[lastElement], p.currentTag.name)

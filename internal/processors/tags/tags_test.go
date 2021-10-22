@@ -1,7 +1,6 @@
 package tags
 
 import (
-	"errors"
 	"testing"
 
 	"github.com/stretchr/testify/require"
@@ -109,7 +108,6 @@ func TestUpdateTagsList(t *testing.T) {
 
 		p.updatePrintList()
 		rq.Len(p.printList, 0)
-		rq.Len(p.printedList, 0)
 	})
 
 	t.Run("skip: current path greater than query", func(t *testing.T) {
@@ -140,15 +138,13 @@ func TestUpdateTagsList(t *testing.T) {
 			currentTag: tag{
 				name: "10",
 			},
-			printList:   []string{"6", "7"},
-			printedList: []string{"6", "7"},
+			printList: []string{"6", "7"},
 		}
 
 		rq := require.New(t)
 
 		p.updatePrintList()
 		rq.Len(p.printList, 2)
-		rq.Len(p.printedList, 2)
 	})
 
 	t.Run("skip: current path contains current tag name", func(t *testing.T) {
@@ -179,15 +175,13 @@ func TestUpdateTagsList(t *testing.T) {
 			currentTag: tag{
 				name: "7",
 			},
-			printList:   []string{"6", "7"},
-			printedList: []string{"6", "7"},
+			printList: []string{"6", "7"},
 		}
 
 		rq := require.New(t)
 
 		p.updatePrintList()
 		rq.Len(p.printList, 2)
-		rq.Len(p.printedList, 2)
 	})
 
 	t.Run("skip: step back from closed tag: last query name is the same as current tag", func(t *testing.T) {
@@ -218,15 +212,13 @@ func TestUpdateTagsList(t *testing.T) {
 			currentTag: tag{
 				name: "4",
 			},
-			printList:   []string{"6", "7"},
-			printedList: []string{"6", "7"},
+			printList: []string{"6", "7"},
 		}
 
 		rq := require.New(t)
 
 		p.updatePrintList()
 		rq.Len(p.printList, 2)
-		rq.Len(p.printedList, 2)
 	})
 
 	t.Run("add tag", func(t *testing.T) {
@@ -257,15 +249,13 @@ func TestUpdateTagsList(t *testing.T) {
 			currentTag: tag{
 				name: "8",
 			},
-			printList:   []string{"6", "7"},
-			printedList: []string{"6", "7"},
+			printList: []string{"6", "7"},
 		}
 
 		rq := require.New(t)
 
 		p.updatePrintList()
 		rq.Len(p.printList, 3)
-		rq.Len(p.printedList, 3)
 	})
 }
 
@@ -285,36 +275,6 @@ func TestProcessCurrentTag(t *testing.T) {
 
 		err := p.processCurrentTag()
 		rq.Error(err)
-	})
-
-	t.Run("err: service tag", func(t *testing.T) {
-		t.Parallel()
-
-		p := Processor{
-			currentTag: tag{
-				bytes: []byte(`<?xml version="1.0" encoding="UTF-8"?>`),
-			},
-		}
-
-		rq := require.New(t)
-
-		err := p.processCurrentTag()
-		rq.True(errors.Is(err, errServiceTag))
-	})
-
-	t.Run("err: cdata", func(t *testing.T) {
-		t.Parallel()
-
-		p := Processor{
-			currentTag: tag{
-				bytes: []byte(`<![CDATA[Two patients (Martin Brest and Rudi Wurlitzer).]]>`),
-			},
-		}
-
-		rq := require.New(t)
-
-		err := p.processCurrentTag()
-		rq.True(errors.Is(err, errServiceTag))
 	})
 
 	t.Run("err: don't start from open bracket", func(t *testing.T) {
@@ -473,12 +433,6 @@ func TestAddSymbolIntoTag(t *testing.T) {
 		err := p.addSymbolIntoTag(symbol.CloseBracket)
 		rq.NoError(err)
 		rq.Equal("<tag>", string(p.currentTag.bytes))
-		rq.False(p.insideTag)
-		rq.Equal("tag", p.currentTag.name)
-		rq.Len(p.printList, 1)
-		rq.Equal("tag", p.printList[0])
-		rq.Len(p.currentPath, 2)
-		rq.Equal("tag", p.currentPath[1])
 	})
 
 	t.Run("service tag", func(t *testing.T) {
@@ -497,7 +451,6 @@ func TestAddSymbolIntoTag(t *testing.T) {
 		err := p.addSymbolIntoTag(symbol.CloseBracket)
 		rq.NoError(err)
 		rq.Equal("<!-- some comment here <b> with tags inside </b>>", string(p.currentTag.bytes))
-		rq.False(p.insideTag)
 		rq.Equal(0, p.currentTag.brackets)
 	})
 
@@ -525,7 +478,6 @@ func TestAddSymbolIntoTag(t *testing.T) {
 		err := p.addSymbolIntoTag(symbol.CloseBracket)
 		rq.NoError(err)
 		rq.Equal(`<tagname attr="value" />`, string(p.currentTag.bytes))
-		rq.False(p.insideTag)
 		rq.Equal(0, p.currentTag.brackets)
 	})
 }
