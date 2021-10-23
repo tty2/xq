@@ -244,6 +244,7 @@ func TestUpdateTagsList(t *testing.T) {
 						Index: -1,
 					},
 				},
+				searchType: domain.TagList,
 			},
 			currentPath: []string{"1", "2", "3", "4"},
 			currentTag: tag{

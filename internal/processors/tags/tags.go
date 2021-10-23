@@ -58,6 +58,7 @@ func (p *Processor) Process(r *bufio.Reader) chan string {
 	buf := make([]byte, 0, 4*1024)
 	ch := make(chan string)
 
+	var idx int
 	go func() {
 		defer close(ch)
 		for {
@@ -79,10 +80,14 @@ func (p *Processor) Process(r *bufio.Reader) chan string {
 
 				return
 			}
+
+			for ; idx < len(p.printList); idx++ {
+				ch <- p.printList[idx]
+			}
 		}
 
-		for i := range p.printList {
-			ch <- p.printList[i]
+		for ; idx < len(p.printList); idx++ {
+			ch <- p.printList[idx]
 		}
 	}()
 
@@ -92,20 +97,18 @@ func (p *Processor) Process(r *bufio.Reader) chan string {
 func (p *Processor) process(chunk []byte) error {
 	for i := range chunk {
 		if p.insideTag {
-			err := p.addSymbolIntoTag(chunk[i])
-			if err != nil {
-				return err
-			}
+			p.addSymbolIntoTag(chunk[i])
 
 			if p.currentTag.brackets > 0 {
 				continue
 			}
+			p.insideTag = false
 
 			if p.skip() {
 				continue
 			}
 
-			err = p.processCurrentTag()
+			err := p.processCurrentTag()
 			if err != nil {
 				return err
 			}
@@ -122,78 +125,82 @@ func (p *Processor) process(chunk []byte) error {
 	return nil
 }
 
-func (p *Processor) addSymbolIntoTag(s byte) error {
+func (p *Processor) addSymbolIntoTag(s byte) {
 	if s == symbol.OpenBracket {
 		p.currentTag.brackets++
-
-		return nil
 	}
 
 	p.currentTag.bytes = append(p.currentTag.bytes, s)
 
 	if s != symbol.CloseBracket {
-		return nil
+		return
 	}
 	p.currentTag.brackets--
-
-	return nil
 }
 
 func (p *Processor) skip() bool {
-	if p.currentTag.brackets > 0 {
-		return true
-	}
-	p.insideTag = false
-
 	return p.currentTag.bytes[1] == '?' ||
 		p.currentTag.bytes[1] == '!'
 }
 
 func (p *Processor) currentTagIsSingle() bool {
-	return p.currentTag.bytes[len(p.currentTag.bytes)-2] == '/'
+	ln := len(p.currentTag.bytes)
+	return ln > 4 && p.currentTag.bytes[ln-2] == '/'
 }
 
 func (p *Processor) processCurrentTag() error {
-	tg := domain.Tag{
-		Bytes: p.currentTag.bytes,
-	}
-
-	err := tg.SetName()
+	err := p.currentTag.setName()
 	if err != nil {
 		return err
 	}
 
 	p.currentTag.closed = p.currentTag.bytes[1] == '/'
-	p.currentTag.name = tg.Name
 
-	p.updatePrintList()
+	if p.currentTag.closed {
+		return p.updatePath()
+	}
 
 	if p.currentTagIsSingle() {
+		p.currentPath = append(p.currentPath, p.currentTag.name)
+		p.updatePrintList()
+		p.currentPath = p.currentPath[:len(p.currentPath)-1]
 		return nil
 	}
 
-	return p.updatePath()
+	err = p.updatePath()
+	if err != nil {
+		return err
+	}
+
+	p.updatePrintList()
+
+	return nil
 }
 
 func (p *Processor) updatePrintList() {
-	if !domain.PathsMatch(p.query.path, p.currentPath) {
-		return
-	}
-
-	if slice.ContainsString(p.printList, p.currentTag.name) {
-		return
-	}
-	// step back after deeper nesting tag with close tag (queryPath == currentPath)
-	ln := len(p.query.path) - 1
-	if ln >= 0 && p.query.path[ln].Name == p.currentTag.name {
-		return
-	}
-
-	if p.query.searchType == domain.TagList {
+	if p.query.searchType == domain.TagList && p.tagInQueryPath() &&
+		!slice.ContainsString(p.printList, p.currentTag.name) {
 		p.printList = append(p.printList, p.currentTag.name)
-	} else if p.query.searchType == domain.AttrList {
+	} else if p.query.searchType == domain.AttrList &&
+		domain.PathsMatch(p.query.path, p.currentPath) {
 		p.printList = pickAttributesNames(p.currentTag.bytes)
 	}
+}
+
+func (p *Processor) tagInQueryPath() bool {
+	// +1 because /query/path/tag + current_tag
+	if len(p.query.path)+1 != len(p.currentPath) {
+		return false
+	}
+
+	// -2 because len - current tag
+	for i := 0; i < len(p.currentPath)-1; i++ {
+		if p.query.path[i].Name != p.currentPath[i] {
+			return false
+		}
+	}
+
+	return true
 }
 
 func (p *Processor) updatePath() error {
@@ -205,8 +212,7 @@ func (p *Processor) updatePath() error {
 				p.currentPath[lastElement], p.currentTag.name)
 		}
 
-		p.currentPath = p.currentPath[:lastElement] // TODO: consider to add p.currentTag.brackets-- after this line
-
+		p.currentPath = p.currentPath[:lastElement]
 		return nil
 	}
 
@@ -215,55 +221,33 @@ func (p *Processor) updatePath() error {
 	return nil
 }
 
-func pickAttributesNames(tag []byte) []string {
-	if len(tag) == 0 || tag[0] != symbol.OpenBracket {
-		return nil
+func (t *tag) setName() error {
+	if len(t.bytes) < 3 {
+		return domain.ErrTagShort
 	}
 
-	var i int
-	// skip tag name
-	for ; i < len(tag) && tag[i] != ' '; i++ {
+	if t.bytes[0] != symbol.OpenBracket {
+		return domain.ErrTagShort
 	}
 
-	var isAttrName bool
-	attrs := []string{}
-	attrName := []byte{}
-	quotes := []byte{}
-	for ; i < len(tag); i++ {
-		if symbol.IsQuote(tag[i]) {
-			if len(quotes) == 0 {
-				quotes = append(quotes, tag[i])
+	if t.bytes[len(t.bytes)-1] != symbol.CloseBracket {
+		return domain.ErrTagShort
+	}
 
-				continue
-			}
+	startName := 1         // name starts after open bracket
+	if t.bytes[1] == '/' { // closed tag
+		startName = 2
+	}
 
-			if tag[i] == quotes[0] {
-				quotes = []byte{}
-			} else {
-				quotes = append(quotes, tag[i])
-			}
-		}
+	endName := startName
 
-		if len(quotes) > 0 {
-			continue
-		}
-
-		if tag[i] == '=' {
-			attrs = append(attrs, string(attrName))
-			isAttrName = false
-			attrName = []byte{}
-
-			continue
-		}
-		if isAttrName {
-			attrName = append(attrName, tag[i])
-
-			continue
-		}
-		if tag[i] == ' ' {
-			isAttrName = true
+	for ; endName < len(t.bytes)-1; endName++ {
+		if t.bytes[endName] == ' ' {
+			break
 		}
 	}
 
-	return attrs
+	t.name = string(t.bytes[startName:endName])
+
+	return nil
 }
