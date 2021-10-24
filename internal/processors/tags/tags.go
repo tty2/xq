@@ -145,7 +145,7 @@ func (p *Processor) skip() bool {
 
 func (p *Processor) currentTagIsSingle() bool {
 	ln := len(p.currentTag.bytes)
-	return ln > 4 && p.currentTag.bytes[ln-2] == '/'
+	return ln > 3 && p.currentTag.bytes[ln-2] == '/'
 }
 
 func (p *Processor) processCurrentTag() error {
@@ -178,12 +178,18 @@ func (p *Processor) processCurrentTag() error {
 }
 
 func (p *Processor) updatePrintList() {
-	if p.query.searchType == domain.TagList && p.tagInQueryPath() &&
+	if p.query.searchType == domain.TagList &&
+		p.tagInQueryPath() &&
 		!slice.ContainsString(p.printList, p.currentTag.name) {
 		p.printList = append(p.printList, p.currentTag.name)
 	} else if p.query.searchType == domain.AttrList &&
 		domain.PathsMatch(p.query.path, p.currentPath) {
-		p.printList = pickAttributesNames(p.currentTag.bytes)
+		list := pickAttributesNames(p.currentTag.bytes)
+		for i := range list {
+			if !slice.ContainsString(p.printList, list[i]) {
+				p.printList = append(p.printList, list[i])
+			}
+		}
 	}
 }
 
@@ -204,19 +210,27 @@ func (p *Processor) tagInQueryPath() bool {
 }
 
 func (p *Processor) updatePath() error {
-	lastElement := len(p.currentPath) - 1
-
-	if lastElement >= 0 && p.currentTag.closed {
-		if p.currentPath[lastElement] != p.currentTag.name {
-			return fmt.Errorf("incorrect xml structure: the last open tag is %s, but close tag is %s",
-				p.currentPath[lastElement], p.currentTag.name)
-		}
-
-		p.currentPath = p.currentPath[:lastElement]
-		return nil
+	if p.currentTag.closed {
+		return p.decrementPath()
 	}
 
 	p.currentPath = append(p.currentPath, p.currentTag.name)
+
+	return nil
+}
+
+func (p *Processor) decrementPath() error {
+	ln := len(p.currentPath)
+	if ln == 0 {
+		return nil
+	}
+
+	if p.currentPath[ln-1] != p.currentTag.name {
+		return fmt.Errorf("incorrect xml structure: the last open tag is %s, but close tag is %s",
+			p.currentPath[ln-1], p.currentTag.name)
+	}
+
+	p.currentPath = p.currentPath[:ln-1]
 
 	return nil
 }
