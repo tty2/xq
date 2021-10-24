@@ -103,6 +103,6 @@ for concrete tag
 - [x] Colorize tags
 - [x] Colorize attributes
 - [x] Get tags list
-- [ ] Get attributes list
+- [x] Get attributes list
 - [ ] Get tag's data
 - [ ] Get attributes data
