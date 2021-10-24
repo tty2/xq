@@ -145,6 +145,7 @@ func (p *Processor) skip() bool {
 
 func (p *Processor) currentTagIsSingle() bool {
 	ln := len(p.currentTag.bytes)
+
 	return ln > 3 && p.currentTag.bytes[ln-2] == '/'
 }
 
@@ -164,6 +165,7 @@ func (p *Processor) processCurrentTag() error {
 		p.currentPath = append(p.currentPath, p.currentTag.name)
 		p.updatePrintList()
 		p.currentPath = p.currentPath[:len(p.currentPath)-1]
+
 		return nil
 	}
 

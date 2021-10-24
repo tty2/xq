@@ -138,7 +138,6 @@ func TestDecrementPath(t *testing.T) {
 		rq.Equal("1", p.currentPath[0])
 		rq.Equal("2", p.currentPath[1])
 	})
-
 }
 
 func TestUpdatePath(t *testing.T) {
