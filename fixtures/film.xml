@@ -96,7 +96,7 @@
         English
       </audio_lang>
     </audio_list>
-    <poster url="https://upload.wikimedia.org/wikipedia/en/8/8f/Knockin%E2%80%99_on_Heaven%E2%80%99s_Door_Poster.jpg" />
+    <poster url="https://upload.wikimedia.org/wikipedia/en/8/8f/Knockin%E2%80%99_on_Heaven%E2%80%99s_Door_Poster.jpg" data="some data" />
     <subtitles>
       <subtitle_lang>
         English

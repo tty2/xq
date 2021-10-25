@@ -8,6 +8,7 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"strings"
 
 	"github.com/tty2/xq/internal/domain"
 	"github.com/tty2/xq/internal/domain/symbol"
@@ -181,15 +182,18 @@ func (p *Processor) processCurrentTag() error {
 
 func (p *Processor) updatePrintList() {
 	if p.query.searchType == domain.TagList &&
-		p.tagInQueryPath() &&
-		!slice.ContainsString(p.printList, p.currentTag.name) {
-		p.printList = append(p.printList, p.currentTag.name)
+		p.tagInQueryPath() {
+		tn := strings.TrimSpace(p.currentTag.name)
+		if !slice.ContainsString(p.printList, tn) {
+			p.printList = append(p.printList, tn)
+		}
 	} else if p.query.searchType == domain.AttrList &&
 		domain.PathsMatch(p.query.path, p.currentPath) {
 		list := pickAttributesNames(p.currentTag.bytes)
 		for i := range list {
-			if !slice.ContainsString(p.printList, list[i]) {
-				p.printList = append(p.printList, list[i])
+			an := strings.TrimSpace(list[i])
+			if !slice.ContainsString(p.printList, an) {
+				p.printList = append(p.printList, an)
 			}
 		}
 	}
@@ -201,7 +205,7 @@ func (p *Processor) tagInQueryPath() bool {
 		return false
 	}
 
-	// -2 because len - current tag
+	// -1 because len - current tag
 	for i := 0; i < len(p.currentPath)-1; i++ {
 		if p.query.path[i].Name != p.currentPath[i] {
 			return false
