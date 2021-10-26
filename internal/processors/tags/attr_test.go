@@ -32,7 +32,7 @@ func TestPickAttributesNames(t *testing.T) {
 	t.Run("ok", func(t *testing.T) {
 		t.Parallel()
 
-		tag := []byte("<tagname attr1='value1' attr2='value2' attr3='value3'")
+		tag := []byte("<tagname attr1='value1' attr2='value2' attr3='value3'>")
 		res := pickAttributesNames(tag)
 
 		rq := require.New(t)
@@ -45,7 +45,7 @@ func TestPickAttributesNames(t *testing.T) {
 	t.Run("ok: other quotes", func(t *testing.T) {
 		t.Parallel()
 
-		tag := []byte(`<tagname attr1="value1" attr2="value2" attr3="value3"`)
+		tag := []byte(`<tagname attr1="value1" attr2="value2" attr3="value3">`)
 		res := pickAttributesNames(tag)
 
 		rq := require.New(t)

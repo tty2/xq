@@ -3,7 +3,7 @@ package tags
 import "github.com/tty2/xq/internal/domain/symbol"
 
 func pickAttributesNames(tag []byte) []string {
-	if len(tag) == 0 || tag[0] != symbol.OpenBracket {
+	if len(tag) < 3 || tag[0] != symbol.OpenBracket || tag[len(tag)-1] != symbol.CloseBracket {
 		return nil
 	}
 
