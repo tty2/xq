@@ -105,4 +105,4 @@ for concrete tag
 - [x] Get tags list
 - [x] Get attributes list
 - [ ] Get tag's data
-- [ ] Get attributes data
+- [x] Get attributes data

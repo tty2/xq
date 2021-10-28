@@ -205,7 +205,12 @@ func (p *Processor) updatePrintList() {
 		if err != nil {
 			return
 		}
-		p.printList = append(p.printList, av)
+		if av == "" {
+			return
+		}
+		if !slice.ContainsString(p.printList, av) {
+			p.printList = append(p.printList, av)
+		}
 	}
 }
 
