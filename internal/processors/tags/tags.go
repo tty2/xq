@@ -23,6 +23,7 @@ type (
 		printList   []string
 		currentTag  tag
 		query       query
+		stop        bool
 	}
 
 	query struct {
@@ -84,6 +85,10 @@ func (p *Processor) Process(r *bufio.Reader) chan string {
 
 			for ; idx < len(p.printList); idx++ {
 				ch <- p.printList[idx]
+			}
+
+			if p.stop {
+				break
 			}
 		}
 
@@ -181,20 +186,30 @@ func (p *Processor) processCurrentTag() error {
 }
 
 func (p *Processor) updatePrintList() {
-	if p.query.searchType == domain.TagList &&
-		p.tagInQueryPath() {
+	switch {
+	case p.query.searchType == domain.TagList && p.tagInQueryPath():
 		tn := strings.TrimSpace(p.currentTag.name)
 		if !slice.ContainsString(p.printList, tn) {
 			p.printList = append(p.printList, tn)
 		}
-	} else if p.query.searchType == domain.AttrList &&
-		domain.PathsMatch(p.query.path, p.currentPath) {
+	case p.query.searchType == domain.AttrList && domain.PathsMatch(p.query.path, p.currentPath):
 		list := pickAttributesNames(p.currentTag.bytes)
 		for i := range list {
 			an := strings.TrimSpace(list[i])
 			if !slice.ContainsString(p.printList, an) {
 				p.printList = append(p.printList, an)
 			}
+		}
+	case p.query.searchType == domain.AttrValue && domain.PathsMatch(p.query.path, p.currentPath):
+		av, err := pickAttributeValue(p.query.attribute, p.currentTag.bytes)
+		if err != nil {
+			return
+		}
+		if av == "" {
+			return
+		}
+		if !slice.ContainsString(p.printList, av) {
+			p.printList = append(p.printList, av)
 		}
 	}
 }
