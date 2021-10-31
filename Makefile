@@ -28,6 +28,8 @@ test: ## Run go tests for files with tests.
 	@if [ $$(cat fixtures/hashes.txt | sed -n 10p) = $$(cat fixtures/film.xml | go run main.go processor.go query.go tags .objects.object | md5sum | awk '{print $$1}') ]; then echo "PASSED"; else exit 125; fi
 	@if [ $$(cat fixtures/hashes.txt | sed -n 11p) = $$(cat fixtures/film.xml | go run main.go processor.go query.go attr .objects.object | md5sum | awk '{print $$1}') ]; then echo "PASSED"; else exit 125; fi
 	@if [ $$(cat fixtures/hashes.txt | sed -n 12p) = $$(cat fixtures/film.xml | go run main.go processor.go query.go attr .objects.object.poster | md5sum | awk '{print $$1}') ]; then echo "PASSED"; else exit 125; fi
+	@if [ $$(cat fixtures/hashes.txt | sed -n 13p) = $$(cat fixtures/film.xml | go run main.go processor.go query.go attr .objects.object.poster#url | md5sum | awk '{print $$1}') ]; then echo "PASSED"; else exit 125; fi
+	@if [ $$(cat fixtures/hashes.txt | sed -n 14p) = $$(cat fixtures/flat.xml | go run main.go processor.go query.go attr .PurchaseOrder.Address#Type | md5sum | awk '{print $$1}') ]; then echo "PASSED"; else exit 125; fi
 
 beautify:
 	gofumpt -l -w ./$$(go list -f {{.Dir}} ./... | grep -v /vendor/)
@@ -60,6 +62,8 @@ hash-gen: ## Gererates result files for tests
 	cat fixtures/film.xml | go run main.go processor.go query.go tags .objects.object | md5sum | awk '{print $$1}' >>  fixtures/hashes.txt
 	cat fixtures/film.xml | go run main.go processor.go query.go attr .objects.object | md5sum | awk '{print $$1}' >>  fixtures/hashes.txt
 	cat fixtures/film.xml | go run main.go processor.go query.go attr .objects.object.poster | md5sum | awk '{print $$1}' >>  fixtures/hashes.txt
+	cat fixtures/film.xml | go run main.go processor.go query.go attr .objects.object.poster#url | md5sum | awk '{print $$1}' >>  fixtures/hashes.txt
+	cat fixtures/flat.xml | go run main.go processor.go query.go attr .PurchaseOrder.Address#Type | md5sum | awk '{print $$1}' >>  fixtures/hashes.txt
 
 gen: ## Generate result to `generate` folder
 	@echo -e "\033[2m→ Generating test files...\033[0m"
