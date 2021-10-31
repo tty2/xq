@@ -55,3 +55,53 @@ func TestPickAttributesNames(t *testing.T) {
 		rq.Equal("attr3", res[2])
 	})
 }
+
+func TestPickAttributeValue(t *testing.T) {
+	t.Parallel()
+
+	rq := require.New(t)
+
+	t.Run("ok", func(t *testing.T) {
+		t.Parallel()
+
+		v, err := pickAttributeValue("attr", []byte("<tagname attr='value' attr2='value2'>"))
+		rq.NoError(err)
+		rq.Equal("value", v)
+	})
+
+	t.Run("ok: double quotes", func(t *testing.T) {
+		t.Parallel()
+
+		v, err := pickAttributeValue("attr", []byte(`<tagname attr="value" attr2="value2">`))
+		rq.NoError(err)
+		rq.Equal("value", v)
+	})
+
+	t.Run("err: no open bracket", func(t *testing.T) {
+		t.Parallel()
+
+		_, err := pickAttributeValue("attr", []byte(`tagname attr="value" attr2="value2">`))
+		rq.Error(err)
+	})
+
+	t.Run("err: no close bracket", func(t *testing.T) {
+		t.Parallel()
+
+		_, err := pickAttributeValue("attr", []byte(`<tagname attr="value" attr2="value2"`))
+		rq.Error(err)
+	})
+
+	t.Run("err: too short", func(t *testing.T) {
+		t.Parallel()
+
+		_, err := pickAttributeValue("attr", []byte(`<>"`))
+		rq.Error(err)
+	})
+
+	t.Run("err: didn't found attribute", func(t *testing.T) {
+		t.Parallel()
+
+		_, err := pickAttributeValue("attr", []byte(`<tagname attr1="value" attr2="value2">`))
+		rq.Error(err)
+	})
+}
