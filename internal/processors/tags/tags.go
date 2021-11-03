@@ -107,7 +107,8 @@ func (p *Processor) Process(r *bufio.Reader) chan string {
 
 func (p *Processor) process(chunk []byte) error {
 	for i := range chunk {
-		if p.insideTag {
+		switch {
+		case p.insideTag:
 			p.addSymbolIntoTag(chunk[i])
 
 			if p.currentTag.brackets > 0 {
@@ -123,7 +124,7 @@ func (p *Processor) process(chunk []byte) error {
 			if err != nil {
 				return err
 			}
-		} else if chunk[i] == symbol.OpenBracket {
+		case chunk[i] == symbol.OpenBracket:
 			p.insideTag = true
 			p.currentTag = tag{
 				bytes:    []byte{symbol.OpenBracket},
@@ -132,13 +133,14 @@ func (p *Processor) process(chunk []byte) error {
 			if p.query.searchType == domain.TagValue && p.intoQueryPath() {
 				if strings.TrimSpace(string(p.tagValue)) == "" {
 					p.tagValue = []byte{}
+
 					continue
 				}
 				p.printList = append(p.printList, string(append(bytes.Repeat([]byte(" "),
 					indentItemSize*p.indentation+indentItemSize), p.tagValue...)))
 				p.tagValue = []byte{}
 			}
-		} else if p.query.searchType == domain.TagValue && p.intoQueryPath() {
+		case p.query.searchType == domain.TagValue && p.intoQueryPath():
 			if chunk[i] == symbol.NewLine || chunk[i] == symbol.CarriageReturn {
 				continue
 			}
