@@ -5,6 +5,7 @@ package tags
 
 import (
 	"bufio"
+	"bytes"
 	"errors"
 	"fmt"
 	"io"
@@ -15,6 +16,8 @@ import (
 	"github.com/tty2/xq/pkg/slice"
 )
 
+const indentItemSize int = 2
+
 type (
 	// Processor is a tag processor. Keeps needed attributes to process data and handle tag data.
 	Processor struct {
@@ -24,6 +27,8 @@ type (
 		currentTag  tag
 		query       query
 		stop        bool
+		indentation int
+		tagValue    []byte
 	}
 
 	query struct {
@@ -102,7 +107,8 @@ func (p *Processor) Process(r *bufio.Reader) chan string {
 
 func (p *Processor) process(chunk []byte) error {
 	for i := range chunk {
-		if p.insideTag {
+		switch {
+		case p.insideTag:
 			p.addSymbolIntoTag(chunk[i])
 
 			if p.currentTag.brackets > 0 {
@@ -118,14 +124,28 @@ func (p *Processor) process(chunk []byte) error {
 			if err != nil {
 				return err
 			}
-		} else if chunk[i] == symbol.OpenBracket {
+		case chunk[i] == symbol.OpenBracket:
 			p.insideTag = true
 			p.currentTag = tag{
 				bytes:    []byte{symbol.OpenBracket},
 				brackets: 1,
 			}
+			if p.query.searchType == domain.TagValue && p.intoQueryPath() {
+				if strings.TrimSpace(string(p.tagValue)) == "" {
+					p.tagValue = []byte{}
+
+					continue
+				}
+				p.printList = append(p.printList, string(append(bytes.Repeat([]byte(" "),
+					indentItemSize*p.indentation+indentItemSize), p.tagValue...)))
+				p.tagValue = []byte{}
+			}
+		case p.query.searchType == domain.TagValue && p.intoQueryPath():
+			if chunk[i] == symbol.NewLine || chunk[i] == symbol.CarriageReturn {
+				continue
+			}
+			p.tagValue = append(p.tagValue, chunk[i])
 		}
-		// skip data outside tags because we are interested in tags only
 	}
 
 	return nil
@@ -164,6 +184,10 @@ func (p *Processor) processCurrentTag() error {
 	p.currentTag.closed = p.currentTag.bytes[1] == '/'
 
 	if p.currentTag.closed {
+		if p.query.searchType == domain.TagValue {
+			p.updatePrintList()
+		}
+
 		return p.updatePath()
 	}
 
@@ -211,6 +235,10 @@ func (p *Processor) updatePrintList() {
 		if !slice.ContainsString(p.printList, av) {
 			p.printList = append(p.printList, av)
 		}
+	case p.query.searchType == domain.TagValue && p.intoQueryPath():
+		p.indentation = len(p.currentPath) - len(p.query.path)
+		p.printList = append(p.printList, string(append(bytes.Repeat([]byte(" "),
+			indentItemSize*p.indentation), p.currentTag.bytes...)))
 	}
 }
 
@@ -222,6 +250,20 @@ func (p *Processor) tagInQueryPath() bool {
 
 	// -1 because len - current tag
 	for i := 0; i < len(p.currentPath)-1; i++ {
+		if p.query.path[i].Name != p.currentPath[i] {
+			return false
+		}
+	}
+
+	return true
+}
+
+func (p *Processor) intoQueryPath() bool {
+	if len(p.query.path) > len(p.currentPath) {
+		return false
+	}
+
+	for i := 0; i < len(p.query.path); i++ {
 		if p.query.path[i].Name != p.currentPath[i] {
 			return false
 		}
