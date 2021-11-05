@@ -771,6 +771,129 @@ func TestUpdatePrintListForAttrValue(t *testing.T) {
 	})
 }
 
+func TestUpdatePrintListForTagValue(t *testing.T) {
+	t.Parallel()
+
+	searchType := domain.TagValue
+	rq := require.New(t)
+
+	t.Run("skip: current path less than query", func(t *testing.T) {
+		t.Parallel()
+
+		p := Processor{
+			query: query{
+				path: []domain.Step{
+					{
+						Name:  "1",
+						Index: -1,
+					},
+					{
+						Name:  "2",
+						Index: -1,
+					},
+					{
+						Name:  "3",
+						Index: -1,
+					},
+					{
+						Name:  "4",
+						Index: -1,
+					},
+				},
+				attribute:  "attr1",
+				searchType: searchType,
+			},
+			currentPath: []string{"1", "2", "3"},
+			printList:   []string{},
+			currentTag: tag{
+				bytes: []byte("<tagname attr1='value1' attr2='value2'>"),
+			},
+		}
+
+		p.updatePrintList()
+		rq.Len(p.printList, 0)
+		rq.Equal(0, p.indentation)
+	})
+
+	t.Run("ok: the same length", func(t *testing.T) {
+		t.Parallel()
+
+		p := Processor{
+			query: query{
+				path: []domain.Step{
+					{
+						Name:  "1",
+						Index: -1,
+					},
+					{
+						Name:  "2",
+						Index: -1,
+					},
+					{
+						Name:  "3",
+						Index: -1,
+					},
+					{
+						Name:  "4",
+						Index: -1,
+					},
+				},
+				attribute:  "attr1",
+				searchType: searchType,
+			},
+			currentPath: []string{"1", "2", "3", "4"},
+			printList:   []string{},
+			currentTag: tag{
+				bytes: []byte("<tagname attr1='value1' attr2='value2'>"),
+			},
+		}
+
+		p.updatePrintList()
+		rq.Len(p.printList, 1)
+		rq.Equal("<tagname attr1='value1' attr2='value2'>", p.printList[0])
+		rq.Equal(0, p.indentation)
+	})
+
+	t.Run("ok: 2 items deeper", func(t *testing.T) {
+		t.Parallel()
+
+		p := Processor{
+			query: query{
+				path: []domain.Step{
+					{
+						Name:  "1",
+						Index: -1,
+					},
+					{
+						Name:  "2",
+						Index: -1,
+					},
+					{
+						Name:  "3",
+						Index: -1,
+					},
+					{
+						Name:  "4",
+						Index: -1,
+					},
+				},
+				attribute:  "attr1",
+				searchType: searchType,
+			},
+			currentPath: []string{"1", "2", "3", "4", "5", "6"},
+			printList:   []string{},
+			currentTag: tag{
+				bytes: []byte("<tagname attr1='value1' attr2='value2'>"),
+			},
+		}
+
+		p.updatePrintList()
+		rq.Len(p.printList, 1)
+		rq.Equal("    <tagname attr1='value1' attr2='value2'>", p.printList[0])
+		rq.Equal(2, p.indentation)
+	})
+}
+
 func TestSkip(t *testing.T) {
 	t.Parallel()
 	rq := require.New(t)
