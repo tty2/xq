@@ -958,3 +958,128 @@ func TestProcess(t *testing.T) {
 		rq.Equal("tagname", p.printList[0])
 	})
 }
+
+func TestIntoQueryPath(t *testing.T) {
+	t.Parallel()
+	rq := require.New(t)
+
+	t.Run("false: too short", func(t *testing.T) {
+		t.Parallel()
+
+		p := Processor{
+			query: query{
+				path: []domain.Step{
+					{
+						Name:  "1",
+						Index: -1,
+					},
+					{
+						Name:  "2",
+						Index: -1,
+					},
+					{
+						Name:  "3",
+						Index: -1,
+					},
+					{
+						Name:  "4",
+						Index: -1,
+					},
+				},
+			},
+			currentPath: []string{"1", "2", "3"},
+		}
+
+		rq.False(p.intoQueryPath())
+	})
+
+	t.Run("false: different", func(t *testing.T) {
+		t.Parallel()
+
+		p := Processor{
+			query: query{
+				path: []domain.Step{
+					{
+						Name:  "1",
+						Index: -1,
+					},
+					{
+						Name:  "2",
+						Index: -1,
+					},
+					{
+						Name:  "3",
+						Index: -1,
+					},
+					{
+						Name:  "4",
+						Index: -1,
+					},
+				},
+			},
+			currentPath: []string{"1", "2", "8", "4", "5"},
+		}
+
+		rq.False(p.intoQueryPath())
+	})
+
+	t.Run("true: the same", func(t *testing.T) {
+		t.Parallel()
+
+		p := Processor{
+			query: query{
+				path: []domain.Step{
+					{
+						Name:  "1",
+						Index: -1,
+					},
+					{
+						Name:  "2",
+						Index: -1,
+					},
+					{
+						Name:  "3",
+						Index: -1,
+					},
+					{
+						Name:  "4",
+						Index: -1,
+					},
+				},
+			},
+			currentPath: []string{"1", "2", "3", "4"},
+		}
+
+		rq.True(p.intoQueryPath())
+	})
+
+	t.Run("true: greater", func(t *testing.T) {
+		t.Parallel()
+
+		p := Processor{
+			query: query{
+				path: []domain.Step{
+					{
+						Name:  "1",
+						Index: -1,
+					},
+					{
+						Name:  "2",
+						Index: -1,
+					},
+					{
+						Name:  "3",
+						Index: -1,
+					},
+					{
+						Name:  "4",
+						Index: -1,
+					},
+				},
+			},
+			currentPath: []string{"1", "2", "3", "4", "5"},
+		}
+
+		rq.True(p.intoQueryPath())
+	})
+}
