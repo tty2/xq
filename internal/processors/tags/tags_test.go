@@ -1221,13 +1221,14 @@ func TestNewProcessor(t *testing.T) {
 func TestProcess(t *testing.T) {
 	t.Parallel()
 
-	t.Run("ok", func(t *testing.T) {
+	t.Run("tagname", func(t *testing.T) {
 		t.Parallel()
 		rq := require.New(t)
 
 		p := Processor{
 			query: query{
-				path: []domain.Step{},
+				path:       []domain.Step{},
+				searchType: domain.TagList,
 			},
 		}
 
@@ -1235,6 +1236,25 @@ func TestProcess(t *testing.T) {
 		rq.Error(err)
 		rq.Len(p.printList, 1)
 		rq.Equal("tagname", p.printList[0])
+	})
+
+	t.Run("ok", func(t *testing.T) {
+		t.Parallel()
+		rq := require.New(t)
+
+		p := Processor{
+			query: query{
+				path:       []domain.Step{},
+				searchType: domain.TagValue,
+			},
+		}
+
+		err := p.process([]byte("<tagname attr='value'>\ndata</tag attr='invalid tag name'>"))
+		rq.Error(err)
+		rq.Len(p.printList, 3)
+		rq.Equal(`  <tagname attr='value'>`, p.printList[0])
+		rq.Equal(`    data`, p.printList[1])
+		rq.Equal(`  </tag attr='invalid tag name'>`, p.printList[2])
 	})
 }
 
