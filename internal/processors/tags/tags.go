@@ -18,6 +18,8 @@ import (
 
 const indentItemSize int = 2
 
+var errStop = errors.New("stop, index found")
+
 type (
 	// Processor is a tag processor. Keeps needed attributes to process data and handle tag data.
 	Processor struct {
@@ -32,9 +34,10 @@ type (
 	}
 
 	query struct {
-		path       []domain.Step
-		attribute  string
-		searchType domain.SearchType
+		path        []domain.Step
+		attribute   string
+		searchType  domain.SearchType
+		indexSearch bool
 	}
 
 	tag struct {
@@ -53,11 +56,40 @@ func NewProcessor(path []domain.Step, attribute string, search domain.SearchType
 
 	return &Processor{
 		query: query{
-			path:       path,
-			attribute:  attribute,
-			searchType: search,
+			path:        path,
+			attribute:   attribute,
+			searchType:  search,
+			indexSearch: isIndexSearch(path),
 		},
 	}, nil
+}
+
+func isIndexSearch(path []domain.Step) bool {
+	for i := range path {
+		if path[i].Index > -1 {
+			return true
+		}
+	}
+
+	return false
+}
+
+func (p *Processor) indexTagFound() bool {
+	if len(p.query.path) != len(p.currentPath) {
+		return false
+	}
+
+	if !domain.PathsMatch(p.query.path, p.currentPath) {
+		return false
+	}
+
+	for i := range p.query.path {
+		if p.query.path[i].Index > -1 {
+			return false
+		}
+	}
+
+	return true
 }
 
 // Process reads the data from `r` reader and processes it.
@@ -83,6 +115,12 @@ func (p *Processor) Process(r *bufio.Reader) chan string {
 
 			err = p.process(buf)
 			if err != nil {
+				if errors.Is(err, errStop) {
+					for ; idx < len(p.printList); idx++ {
+						ch <- p.printList[idx]
+					}
+					break
+				}
 				ch <- err.Error()
 
 				return
@@ -180,36 +218,43 @@ func (p *Processor) processCurrentTag() error {
 	if err != nil {
 		return err
 	}
-
 	p.currentTag.closed = p.currentTag.bytes[1] == '/'
 
 	if p.currentTag.closed {
-		if p.query.searchType == domain.TagValue {
+		if p.query.indexSearch && !p.stop && p.indexTagFound() {
 			p.updatePrintList()
+			p.stop = true
 		}
-
-		return p.updatePath()
-	}
-
-	if p.currentTagIsSingle() {
+	} else {
 		p.currentPath = append(p.currentPath, p.currentTag.name)
-		p.updatePrintList()
-		p.currentPath = p.currentPath[:len(p.currentPath)-1]
-
-		return nil
-	}
-
-	err = p.updatePath()
-	if err != nil {
-		return err
 	}
 
 	p.updatePrintList()
+	if p.currentTagIsSingle() {
+		p.currentPath = p.currentPath[:len(p.currentPath)-1]
+	}
+	if p.currentTag.closed {
+		p.decrementPath()
+	}
+
+	if p.stop {
+		return errStop
+	}
 
 	return nil
 }
 
 func (p *Processor) updatePrintList() {
+	if p.query.indexSearch {
+		if p.stop {
+			return
+		}
+		p.decrementSearchIndex()
+
+		if !p.indexTagFound() {
+			return
+		}
+	}
 	switch {
 	case p.query.searchType == domain.TagList && p.tagInQueryPath():
 		tn := strings.TrimSpace(p.currentTag.name)
@@ -272,14 +317,18 @@ func (p *Processor) intoQueryPath() bool {
 	return true
 }
 
-func (p *Processor) updatePath() error {
-	if p.currentTag.closed {
-		return p.decrementPath()
+func (p *Processor) pathIntoQuery() bool {
+	if len(p.currentPath) > len(p.query.path) {
+		return false
 	}
 
-	p.currentPath = append(p.currentPath, p.currentTag.name)
+	for i := 0; i < len(p.currentPath); i++ {
+		if p.query.path[i].Name != p.currentPath[i] {
+			return false
+		}
+	}
 
-	return nil
+	return true
 }
 
 func (p *Processor) decrementPath() error {
@@ -327,4 +376,20 @@ func (t *tag) setName() error {
 	t.name = string(t.bytes[startName:endName])
 
 	return nil
+}
+
+func (p *Processor) decrementSearchIndex() {
+	if len(p.currentPath) > len(p.query.path) {
+		return
+	}
+	if len(p.currentPath) == 0 {
+		return
+	}
+	if p.query.path[len(p.currentPath)-1].Index == -1 {
+		return
+	}
+
+	if p.pathIntoQuery() {
+		p.query.path[len(p.currentPath)-1].Index--
+	}
 }
