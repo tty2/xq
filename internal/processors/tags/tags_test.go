@@ -1322,6 +1322,7 @@ func TestIntoQueryPath(t *testing.T) {
 	})
 }
 
+// nolint lll: there are long strings on purpose
 func TestProcessWithIndex(t *testing.T) {
 	t.Parallel()
 

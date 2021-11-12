@@ -237,10 +237,10 @@ func (p *Processor) processCurrentTag() error {
 	p.currentTag.closed = p.currentTag.bytes[1] == '/'
 
 	if p.currentTag.closed {
-		if p.index.set &&
-			!p.stop &&
-			p.index.insideTarget &&
-			domain.PathsMatch(p.query.path, p.currentPath) {
+		if p.index.set && // process with index in path initialized
+			!p.stop && // target isn't parsed completely
+			p.index.insideTarget && // but current tag is target
+			domain.PathsMatch(p.query.path, p.currentPath) { // and this is the close tag for target
 			p.updatePrintList()
 			p.stop = true
 		}
