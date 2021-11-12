@@ -31,6 +31,14 @@ test: ## Run go tests for files with tests.
 	@if [ $$(cat fixtures/hashes.txt | sed -n 13p) = $$(cat fixtures/film.xml | go run main.go processor.go query.go attr .objects.object.poster#url | md5sum | awk '{print $$1}') ]; then echo "PASSED"; else exit 125; fi
 	@if [ $$(cat fixtures/hashes.txt | sed -n 14p) = $$(cat fixtures/flat.xml | go run main.go processor.go query.go attr .PurchaseOrder.Address#Type | md5sum | awk '{print $$1}') ]; then echo "PASSED"; else exit 125; fi
 	@if [ $$(cat fixtures/hashes.txt | sed -n 15p) = $$(cat fixtures/flat.xml | go run main.go processor.go query.go .PurchaseOrder.Address.Name | md5sum | awk '{print $$1}') ]; then echo "PASSED"; else exit 125; fi
+	@if [ $$(cat fixtures/hashes.txt | sed -n 16p) = $$(cat fixtures/film.xml | go run main.go processor.go query.go .objects.object.actors.actor[0] | md5sum | awk '{print $$1}') ]; then echo "PASSED"; else exit 125; fi
+	@if [ $$(cat fixtures/hashes.txt | sed -n 17p) = $$(cat fixtures/film.xml | go run main.go processor.go query.go .objects.object.actors.actor[6] | md5sum | awk '{print $$1}') ]; then echo "PASSED"; else exit 125; fi
+	@if [ $$(cat fixtures/hashes.txt | sed -n 18p) = $$(cat fixtures/film.xml | go run main.go processor.go query.go .objects[0].object[0].actors.actor[1] | md5sum | awk '{print $$1}') ]; then echo "PASSED"; else exit 125; fi
+	@if [ $$(cat fixtures/hashes.txt | sed -n 19p) = $$(cat fixtures/film.xml | go run main.go processor.go query.go .objects[1].object.actors.actor | md5sum | awk '{print $$1}') ]; then echo "PASSED"; else exit 125; fi
+	@if [ $$(cat fixtures/hashes.txt | sed -n 20p) = $$(cat fixtures/film.xml | go run main.go processor.go query.go .objects.object.poster[1] | md5sum | awk '{print $$1}') ]; then echo "PASSED"; else exit 125; fi
+	@if [ $$(cat fixtures/hashes.txt | sed -n 21p) = $$(cat fixtures/film.xml | go run main.go processor.go query.go attr .objects.object.poster[0] | md5sum | awk '{print $$1}') ]; then echo "PASSED"; else exit 125; fi
+	@if [ $$(cat fixtures/hashes.txt | sed -n 22p) = $$(cat fixtures/film.xml | go run main.go processor.go query.go attr .objects.object.poster[0]#url | md5sum | awk '{print $$1}') ]; then echo "PASSED"; else exit 125; fi
+	@if [ $$(cat fixtures/hashes.txt | sed -n 23p) = $$(cat fixtures/film.xml | go run main.go processor.go query.go tags .objects.object[0].actors | md5sum | awk '{print $$1}') ]; then echo "PASSED"; else exit 125; fi
 
 beautify:
 	gofumpt -l -w ./$$(go list -f {{.Dir}} ./... | grep -v /vendor/)
@@ -66,6 +74,16 @@ hash-gen: ## Gererates result files for tests
 	cat fixtures/film.xml | go run main.go processor.go query.go attr .objects.object.poster#url | md5sum | awk '{print $$1}' >>  fixtures/hashes.txt
 	cat fixtures/flat.xml | go run main.go processor.go query.go attr .PurchaseOrder.Address#Type | md5sum | awk '{print $$1}' >>  fixtures/hashes.txt
 	cat fixtures/flat.xml | go run main.go processor.go query.go .PurchaseOrder.Address.Name | md5sum | awk '{print $$1}' >>  fixtures/hashes.txt
+	cat fixtures/film.xml | go run main.go processor.go query.go .objects.object.actors.actor[0] | md5sum | awk '{print $$1}' >>  fixtures/hashes.txt
+
+	cat fixtures/film.xml | go run main.go processor.go query.go .objects.object.actors.actor[6] | md5sum | awk '{print $$1}' >>  fixtures/hashes.txt
+	cat fixtures/film.xml | go run main.go processor.go query.go .objects[0].object[0].actors.actor[1] | md5sum | awk '{print $$1}' >>  fixtures/hashes.txt
+	cat fixtures/film.xml | go run main.go processor.go query.go .objects[1].object.actors.actor | md5sum | awk '{print $$1}' >>  fixtures/hashes.txt
+	cat fixtures/film.xml | go run main.go processor.go query.go .objects.object.poster[1] | md5sum | awk '{print $$1}' >>  fixtures/hashes.txt
+
+	cat fixtures/film.xml | go run main.go processor.go query.go attr .objects.object.poster[0] | md5sum | awk '{print $$1}' >>  fixtures/hashes.txt
+	cat fixtures/film.xml | go run main.go processor.go query.go attr .objects.object.poster[0]#url | md5sum | awk '{print $$1}' >>  fixtures/hashes.txt
+	cat fixtures/film.xml | go run main.go processor.go query.go tags .objects.object[0].actors | md5sum | awk '{print $$1}' >>  fixtures/hashes.txt
 
 gen: ## Generate result to `generate` folder
 	@echo -e "\033[2m→ Generating test files...\033[0m"

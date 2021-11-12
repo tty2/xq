@@ -26,15 +26,21 @@ type (
 		printList   []string
 		currentTag  tag
 		query       query
-		stop        bool
 		indentation int
 		tagValue    []byte
+		stop        bool
+		index       index
 	}
 
 	query struct {
 		path       []domain.Step
 		attribute  string
 		searchType domain.SearchType
+	}
+
+	index struct {
+		set          bool
+		insideTarget bool
 	}
 
 	tag struct {
@@ -57,7 +63,42 @@ func NewProcessor(path []domain.Step, attribute string, search domain.SearchType
 			attribute:  attribute,
 			searchType: search,
 		},
+		index: index{
+			set: isIndexSearch(path),
+		},
 	}, nil
+}
+
+func isIndexSearch(path []domain.Step) bool {
+	for i := range path {
+		if path[i].Index > -1 {
+			return true
+		}
+	}
+
+	return false
+}
+
+func (p *Processor) indexTagFound() bool {
+	if len(p.query.path) != len(p.currentPath) {
+		return false
+	}
+
+	if !domain.PathsMatch(p.query.path, p.currentPath) {
+		return false
+	}
+
+	for i := range p.query.path {
+		if p.query.path[i].Index > -1 {
+			return false
+		}
+	}
+
+	if !p.index.insideTarget {
+		p.index.insideTarget = true
+	}
+
+	return true
 }
 
 // Process reads the data from `r` reader and processes it.
@@ -93,7 +134,7 @@ func (p *Processor) Process(r *bufio.Reader) chan string {
 			}
 
 			if p.stop {
-				break
+				return
 			}
 		}
 
@@ -124,6 +165,9 @@ func (p *Processor) process(chunk []byte) error {
 			if err != nil {
 				return err
 			}
+			if p.stop {
+				return nil
+			}
 		case chunk[i] == symbol.OpenBracket:
 			p.insideTag = true
 			p.currentTag = tag{
@@ -131,6 +175,11 @@ func (p *Processor) process(chunk []byte) error {
 				brackets: 1,
 			}
 			if p.query.searchType == domain.TagValue && p.intoQueryPath() {
+				if p.index.set {
+					if !p.index.insideTarget {
+						continue
+					}
+				}
 				if strings.TrimSpace(string(p.tagValue)) == "" {
 					p.tagValue = []byte{}
 
@@ -141,6 +190,11 @@ func (p *Processor) process(chunk []byte) error {
 				p.tagValue = []byte{}
 			}
 		case p.query.searchType == domain.TagValue && p.intoQueryPath():
+			if p.index.set {
+				if !p.index.insideTarget {
+					continue
+				}
+			}
 			if chunk[i] == symbol.NewLine || chunk[i] == symbol.CarriageReturn {
 				continue
 			}
@@ -180,36 +234,46 @@ func (p *Processor) processCurrentTag() error {
 	if err != nil {
 		return err
 	}
-
 	p.currentTag.closed = p.currentTag.bytes[1] == '/'
 
 	if p.currentTag.closed {
-		if p.query.searchType == domain.TagValue {
+		if p.index.set && // process with index in path initialized
+			!p.stop && // target isn't parsed completely
+			p.index.insideTarget && // but current tag is target
+			domain.PathsMatch(p.query.path, p.currentPath) { // and this is the close tag for target
 			p.updatePrintList()
+			p.stop = true
 		}
-
-		return p.updatePath()
-	}
-
-	if p.currentTagIsSingle() {
+	} else {
 		p.currentPath = append(p.currentPath, p.currentTag.name)
-		p.updatePrintList()
-		p.currentPath = p.currentPath[:len(p.currentPath)-1]
-
-		return nil
-	}
-
-	err = p.updatePath()
-	if err != nil {
-		return err
 	}
 
 	p.updatePrintList()
+	if p.currentTagIsSingle() {
+		p.currentPath = p.currentPath[:len(p.currentPath)-1]
+	}
+	if p.currentTag.closed {
+		return p.decrementPath()
+	}
 
 	return nil
 }
 
 func (p *Processor) updatePrintList() {
+	if p.index.set {
+		if p.stop {
+			return
+		}
+
+		if !p.currentTag.closed && !p.index.insideTarget {
+			p.decrementSearchIndex()
+			p.indexTagFound()
+		}
+
+		if !p.index.insideTarget {
+			return
+		}
+	}
 	switch {
 	case p.query.searchType == domain.TagList && p.tagInQueryPath():
 		tn := strings.TrimSpace(p.currentTag.name)
@@ -272,14 +336,18 @@ func (p *Processor) intoQueryPath() bool {
 	return true
 }
 
-func (p *Processor) updatePath() error {
-	if p.currentTag.closed {
-		return p.decrementPath()
+func (p *Processor) pathIntoQuery() bool {
+	if len(p.currentPath) > len(p.query.path) {
+		return false
 	}
 
-	p.currentPath = append(p.currentPath, p.currentTag.name)
+	for i := 0; i < len(p.currentPath); i++ {
+		if p.query.path[i].Name != p.currentPath[i] {
+			return false
+		}
+	}
 
-	return nil
+	return true
 }
 
 func (p *Processor) decrementPath() error {
@@ -327,4 +395,20 @@ func (t *tag) setName() error {
 	t.name = string(t.bytes[startName:endName])
 
 	return nil
+}
+
+func (p *Processor) decrementSearchIndex() {
+	if len(p.currentPath) > len(p.query.path) {
+		return
+	}
+	if len(p.currentPath) == 0 {
+		return
+	}
+	if p.query.path[len(p.currentPath)-1].Index == -1 {
+		return
+	}
+
+	if p.pathIntoQuery() {
+		p.query.path[len(p.currentPath)-1].Index--
+	}
 }

@@ -140,68 +140,6 @@ func TestDecrementPath(t *testing.T) {
 	})
 }
 
-func TestUpdatePath(t *testing.T) {
-	t.Parallel()
-
-	t.Run("err: incorrect xml", func(t *testing.T) {
-		t.Parallel()
-
-		p := Processor{
-			currentPath: []string{"1", "2", "3"},
-			currentTag: tag{
-				closed: true,
-				name:   "4",
-			},
-		}
-
-		rq := require.New(t)
-
-		err := p.updatePath()
-		rq.Error(err)
-	})
-
-	t.Run("ok: correct close tag", func(t *testing.T) {
-		t.Parallel()
-
-		p := Processor{
-			currentPath: []string{"1", "2", "3"},
-			currentTag: tag{
-				closed: true,
-				name:   "3",
-			},
-		}
-
-		rq := require.New(t)
-
-		err := p.updatePath()
-		rq.NoError(err)
-		rq.Len(p.currentPath, 2)
-		rq.Equal("1", p.currentPath[0])
-		rq.Equal("2", p.currentPath[1])
-	})
-
-	t.Run("ok: new tag", func(t *testing.T) {
-		t.Parallel()
-
-		p := Processor{
-			currentPath: []string{"1", "2", "3"},
-			currentTag: tag{
-				name: "4",
-			},
-		}
-
-		rq := require.New(t)
-
-		err := p.updatePath()
-		rq.NoError(err)
-		rq.Len(p.currentPath, 4)
-		rq.Equal("1", p.currentPath[0])
-		rq.Equal("2", p.currentPath[1])
-		rq.Equal("3", p.currentPath[2])
-		rq.Equal("4", p.currentPath[3])
-	})
-}
-
 func TestTagInQueryPath(t *testing.T) {
 	t.Parallel()
 	rq := require.New(t)
@@ -1234,8 +1172,9 @@ func TestProcess(t *testing.T) {
 
 		err := p.process([]byte(`attr0="value0"><tagname attr="value"><!--comment--></tag attr="invalid tag name">`))
 		rq.Error(err)
-		rq.Len(p.printList, 1)
+		rq.Len(p.printList, 2)
 		rq.Equal("tagname", p.printList[0])
+		rq.Equal("tag", p.printList[1])
 	})
 
 	t.Run("ok", func(t *testing.T) {
@@ -1380,5 +1319,370 @@ func TestIntoQueryPath(t *testing.T) {
 		}
 
 		rq.True(p.intoQueryPath())
+	})
+}
+
+// nolint lll: there are long strings on purpose
+func TestProcessWithIndex(t *testing.T) {
+	t.Parallel()
+
+	t.Run("tag value: first", func(t *testing.T) {
+		t.Parallel()
+		rq := require.New(t)
+
+		p := Processor{
+			query: query{
+				path: []domain.Step{
+					{
+						Name:  "objects",
+						Index: -1,
+					},
+					{
+						Name:  "object",
+						Index: 0,
+					},
+				},
+				searchType: domain.TagValue,
+			},
+			index: index{
+				set: true,
+			},
+		}
+
+		err := p.process([]byte(`<objects><object><tg></tg></object><object><tg1></tg1></object><object><tg2></tg2></object></objects>`))
+		rq.NoError(err)
+		rq.Len(p.printList, 4)
+		rq.Equal("<object>", p.printList[0])
+		rq.Equal("  <tg>", p.printList[1])
+		rq.Equal("  </tg>", p.printList[2])
+		rq.Equal("</object>", p.printList[3])
+	})
+
+	t.Run("tag value: second", func(t *testing.T) {
+		t.Parallel()
+		rq := require.New(t)
+
+		p := Processor{
+			query: query{
+				path: []domain.Step{
+					{
+						Name:  "objects",
+						Index: -1,
+					},
+					{
+						Name:  "object",
+						Index: 1,
+					},
+				},
+				searchType: domain.TagValue,
+			},
+			index: index{
+				set: true,
+			},
+		}
+
+		err := p.process([]byte(`<objects><object><tg></tg></object><object><tg1></tg1></object><object><tg2></tg2></object></objects>`))
+		rq.NoError(err)
+		rq.Len(p.printList, 4)
+		rq.Equal("<object>", p.printList[0])
+		rq.Equal("  <tg1>", p.printList[1])
+		rq.Equal("  </tg1>", p.printList[2])
+		rq.Equal("</object>", p.printList[3])
+	})
+
+	t.Run("tag value: single", func(t *testing.T) {
+		t.Parallel()
+		rq := require.New(t)
+
+		p := Processor{
+			query: query{
+				path: []domain.Step{
+					{
+						Name:  "objects",
+						Index: -1,
+					},
+					{
+						Name:  "single",
+						Index: 0,
+					},
+				},
+				searchType: domain.TagValue,
+			},
+			index: index{
+				set: true,
+			},
+		}
+
+		err := p.process([]byte(`<objects><object><tg></tg></object><single /><data><tg2></tg2></data></objects>`))
+		rq.NoError(err)
+		rq.Len(p.printList, 1)
+		rq.Equal("<single />", p.printList[0])
+	})
+
+	t.Run("tag name: first", func(t *testing.T) {
+		t.Parallel()
+		rq := require.New(t)
+
+		p := Processor{
+			query: query{
+				path: []domain.Step{
+					{
+						Name:  "objects",
+						Index: -1,
+					},
+					{
+						Name:  "object",
+						Index: 0,
+					},
+				},
+				searchType: domain.TagList,
+			},
+			index: index{
+				set: true,
+			},
+		}
+
+		err := p.process([]byte(`<objects><object><tg></tg><data></data></object><object><tg1></tg1></object><object><tg2></tg2></object></objects>`))
+		rq.NoError(err)
+		rq.Len(p.printList, 2)
+		rq.Equal("tg", p.printList[0])
+		rq.Equal("data", p.printList[1])
+	})
+
+	t.Run("tag name: second", func(t *testing.T) {
+		t.Parallel()
+		rq := require.New(t)
+
+		p := Processor{
+			query: query{
+				path: []domain.Step{
+					{
+						Name:  "objects",
+						Index: -1,
+					},
+					{
+						Name:  "object",
+						Index: 1,
+					},
+				},
+				searchType: domain.TagList,
+			},
+			index: index{
+				set: true,
+			},
+		}
+
+		err := p.process([]byte(`<objects><object><tg></tg><data></data></object><object><tg1></tg1></object><object><tg2></tg2></object></objects>`))
+		rq.NoError(err)
+		rq.Len(p.printList, 1)
+		rq.Equal("tg1", p.printList[0])
+	})
+
+	t.Run("tag name: single", func(t *testing.T) {
+		t.Parallel()
+		rq := require.New(t)
+
+		p := Processor{
+			query: query{
+				path: []domain.Step{
+					{
+						Name:  "objects",
+						Index: -1,
+					},
+					{
+						Name:  "single",
+						Index: 0,
+					},
+				},
+				searchType: domain.TagList,
+			},
+			index: index{
+				set: true,
+			},
+		}
+
+		err := p.process([]byte(`<objects><object><tg></tg></object><single /><data><tg2></tg2></data></objects>`))
+		rq.NoError(err)
+		rq.Len(p.printList, 0)
+	})
+
+	t.Run("attr list: first", func(t *testing.T) {
+		t.Parallel()
+		rq := require.New(t)
+
+		p := Processor{
+			query: query{
+				path: []domain.Step{
+					{
+						Name:  "objects",
+						Index: -1,
+					},
+					{
+						Name:  "object",
+						Index: 0,
+					},
+				},
+				searchType: domain.AttrList,
+			},
+			index: index{
+				set: true,
+			},
+		}
+
+		err := p.process([]byte(`<objects><object attr1="value1" attr2="value2"><tg></tg><data></data></object><object attr3="value3" atrr4="value4"><tg1></tg1></object><object attr5="value5" atrr6="value6"><tg2></tg2></object></objects>`))
+		rq.NoError(err)
+		rq.Len(p.printList, 2)
+		rq.Equal("attr1", p.printList[0])
+		rq.Equal("attr2", p.printList[1])
+	})
+
+	t.Run("attr list: second", func(t *testing.T) {
+		t.Parallel()
+		rq := require.New(t)
+
+		p := Processor{
+			query: query{
+				path: []domain.Step{
+					{
+						Name:  "objects",
+						Index: -1,
+					},
+					{
+						Name:  "object",
+						Index: 1,
+					},
+				},
+				searchType: domain.AttrList,
+			},
+			index: index{
+				set: true,
+			},
+		}
+
+		err := p.process([]byte(`<objects><object attr1="value1" attr2="value2"><tg></tg><data></data></object><object attr3="value3" attr4="value4"><tg1></tg1></object><object attr5="value5" atrr6="value6"><tg2></tg2></object></objects>`))
+		rq.NoError(err)
+		rq.Len(p.printList, 2)
+		rq.Equal("attr3", p.printList[0])
+		rq.Equal("attr4", p.printList[1])
+	})
+
+	t.Run("attr list: single", func(t *testing.T) {
+		t.Parallel()
+		rq := require.New(t)
+
+		p := Processor{
+			query: query{
+				path: []domain.Step{
+					{
+						Name:  "objects",
+						Index: -1,
+					},
+					{
+						Name:  "single",
+						Index: 0,
+					},
+				},
+				searchType: domain.AttrList,
+			},
+			index: index{
+				set: true,
+			},
+		}
+
+		err := p.process([]byte(`<objects><object><tg></tg></object><single attr3="value3" attr4="value4" /><data><tg2></tg2></data></objects>`))
+		rq.NoError(err)
+		rq.Len(p.printList, 2)
+		rq.Equal("attr3", p.printList[0])
+		rq.Equal("attr4", p.printList[1])
+	})
+
+	t.Run("attr value: first", func(t *testing.T) {
+		t.Parallel()
+		rq := require.New(t)
+
+		p := Processor{
+			query: query{
+				path: []domain.Step{
+					{
+						Name:  "objects",
+						Index: -1,
+					},
+					{
+						Name:  "object",
+						Index: 0,
+					},
+				},
+				searchType: domain.AttrValue,
+				attribute:  "attr1",
+			},
+			index: index{
+				set: true,
+			},
+		}
+
+		err := p.process([]byte(`<objects><object attr1="value1" attr2="value2"><tg></tg><data></data></object><object attr1="value3" attr2="value4"><tg1></tg1></object><object attr1="value5" attr2="value6"><tg2></tg2></object></objects>`))
+		rq.NoError(err)
+		rq.Len(p.printList, 1)
+		rq.Equal("value1", p.printList[0])
+	})
+
+	t.Run("attr value: second", func(t *testing.T) {
+		t.Parallel()
+		rq := require.New(t)
+
+		p := Processor{
+			query: query{
+				path: []domain.Step{
+					{
+						Name:  "objects",
+						Index: -1,
+					},
+					{
+						Name:  "object",
+						Index: 1,
+					},
+				},
+				searchType: domain.AttrValue,
+				attribute:  "attr1",
+			},
+			index: index{
+				set: true,
+			},
+		}
+
+		err := p.process([]byte(`<objects><object attr1="value1" attr2="value2"><tg></tg><data></data></object><object attr1="value3" attr2="value4"><tg1></tg1></object><object attr1="value5" attr2="value6"><tg2></tg2></object></objects>`))
+		rq.NoError(err)
+		rq.Len(p.printList, 1)
+		rq.Equal("value3", p.printList[0])
+	})
+
+	t.Run("attr value: single", func(t *testing.T) {
+		t.Parallel()
+		rq := require.New(t)
+
+		p := Processor{
+			query: query{
+				path: []domain.Step{
+					{
+						Name:  "objects",
+						Index: -1,
+					},
+					{
+						Name:  "single",
+						Index: 0,
+					},
+				},
+				searchType: domain.AttrValue,
+				attribute:  "attr3",
+			},
+			index: index{
+				set: true,
+			},
+		}
+
+		err := p.process([]byte(`<objects><object><tg></tg></object><single attr3="value3" attr4="value4" /><data><tg2></tg2></data></objects>`))
+		rq.NoError(err)
+		rq.Len(p.printList, 1)
+		rq.Equal("value3", p.printList[0])
 	})
 }
