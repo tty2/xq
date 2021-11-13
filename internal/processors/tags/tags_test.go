@@ -1685,4 +1685,72 @@ func TestProcessWithIndex(t *testing.T) {
 		rq.Len(p.printList, 1)
 		rq.Equal("value3", p.printList[0])
 	})
+
+	t.Run("tag value: first tg", func(t *testing.T) {
+		t.Parallel()
+		rq := require.New(t)
+
+		p := Processor{
+			query: query{
+				path: []domain.Step{
+					{
+						Name:  "objects",
+						Index: -1,
+					},
+					{
+						Name:  "object",
+						Index: 0,
+					},
+					{
+						Name:  "tg",
+						Index: -1,
+					},
+				},
+				searchType: domain.TagValue,
+			},
+			index: index{
+				set: true,
+			},
+		}
+
+		err := p.process([]byte(`<objects><object><tg></tg></object><object><tg1></tg1></object><object><tg2></tg2></object></objects>`))
+		rq.NoError(err)
+		rq.Len(p.printList, 2)
+		rq.Equal("<tg>", p.printList[0])
+		rq.Equal("</tg>", p.printList[1])
+	})
+
+	t.Run("tag value: second tg", func(t *testing.T) {
+		t.Parallel()
+		rq := require.New(t)
+
+		p := Processor{
+			query: query{
+				path: []domain.Step{
+					{
+						Name:  "objects",
+						Index: -1,
+					},
+					{
+						Name:  "object",
+						Index: 1,
+					},
+					{
+						Name:  "tg1",
+						Index: -1,
+					},
+				},
+				searchType: domain.TagValue,
+			},
+			index: index{
+				set: true,
+			},
+		}
+
+		err := p.process([]byte(`<objects><object><tg></tg></object><object><tg1></tg1></object><object><tg2></tg2></object></objects>`))
+		rq.NoError(err)
+		rq.Len(p.printList, 2)
+		rq.Equal("<tg1>", p.printList[0])
+		rq.Equal("</tg1>", p.printList[1])
+	})
 }

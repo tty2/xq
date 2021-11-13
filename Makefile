@@ -75,12 +75,10 @@ hash-gen: ## Gererates result files for tests
 	cat fixtures/flat.xml | go run main.go processor.go query.go attr .PurchaseOrder.Address#Type | md5sum | awk '{print $$1}' >>  fixtures/hashes.txt
 	cat fixtures/flat.xml | go run main.go processor.go query.go .PurchaseOrder.Address.Name | md5sum | awk '{print $$1}' >>  fixtures/hashes.txt
 	cat fixtures/film.xml | go run main.go processor.go query.go .objects.object.actors.actor[0] | md5sum | awk '{print $$1}' >>  fixtures/hashes.txt
-
 	cat fixtures/film.xml | go run main.go processor.go query.go .objects.object.actors.actor[6] | md5sum | awk '{print $$1}' >>  fixtures/hashes.txt
 	cat fixtures/film.xml | go run main.go processor.go query.go .objects[0].object[0].actors.actor[1] | md5sum | awk '{print $$1}' >>  fixtures/hashes.txt
 	cat fixtures/film.xml | go run main.go processor.go query.go .objects[1].object.actors.actor | md5sum | awk '{print $$1}' >>  fixtures/hashes.txt
 	cat fixtures/film.xml | go run main.go processor.go query.go .objects.object.poster[1] | md5sum | awk '{print $$1}' >>  fixtures/hashes.txt
-
 	cat fixtures/film.xml | go run main.go processor.go query.go attr .objects.object.poster[0] | md5sum | awk '{print $$1}' >>  fixtures/hashes.txt
 	cat fixtures/film.xml | go run main.go processor.go query.go attr .objects.object.poster[0]#url | md5sum | awk '{print $$1}' >>  fixtures/hashes.txt
 	cat fixtures/film.xml | go run main.go processor.go query.go tags .objects.object[0].actors | md5sum | awk '{print $$1}' >>  fixtures/hashes.txt
