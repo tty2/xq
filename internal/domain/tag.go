@@ -1,6 +1,7 @@
 package domain
 
 import (
+	"github.com/tty2/xq/internal/domain/color"
 	"github.com/tty2/xq/internal/domain/symbol"
 )
 
@@ -16,8 +17,11 @@ type Tag struct {
 }
 
 type attribute struct {
-	Name  []byte
-	Value []byte
+	Name        []byte
+	Value       []byte
+	Quote       byte
+	NextIsQuote bool
+	InsideValue bool
 }
 
 // Validate checks if tag `Bytes` has 3 or more symbols, starts with open bracket
@@ -123,4 +127,80 @@ func (t *Tag) SetNameAndAttributes() error {
 	}
 
 	return nil
+}
+
+// ColorizeTag colorizes tag.
+func ColorizeTag(tg []byte) []byte {
+	ln := len(tg)
+
+	coloredTag := make([]byte, 0, ln)
+
+	startName := 1    // name starts after open bracket
+	if tg[1] == '/' { // closed tag
+		startName = 2
+	}
+
+	endName := startName
+	for ; endName < len(tg)-1; endName++ {
+		if tg[endName] == ' ' {
+			break
+		}
+	}
+
+	coloredTag = append(coloredTag, tg[:startName]...)        // add open bracket
+	coloredTag = append(coloredTag, []byte(color.Red)...)     // add red color
+	coloredTag = append(coloredTag, tg[startName:endName]...) // tag name
+
+	attr := attribute{
+		Value: []byte{},
+	}
+	for i := endName; i < ln-1; i++ {
+		if attr.NextIsQuote {
+			if symbol.IsQuote(tg[i]) {
+				attr.Quote = tg[i]
+				attr.NextIsQuote = false
+				attr.InsideValue = true
+			}
+
+			continue
+		}
+		if attr.InsideValue {
+			if tg[i] == attr.Quote && (len(attr.Value) == 0 || attr.Value[len(attr.Value)-1] != '\\') {
+				attr.InsideValue = false
+				coloredTag = append(coloredTag, symbol.Space)
+				coloredTag = append(coloredTag, []byte(color.Green)...)
+				coloredTag = append(coloredTag, attr.Name...)
+				coloredTag = append(coloredTag, []byte(color.White)...)
+				coloredTag = append(coloredTag, '=', attr.Quote)
+				coloredTag = append(coloredTag, attr.Value...)
+				coloredTag = append(coloredTag, attr.Quote)
+				attr = attribute{
+					Value: []byte{},
+				}
+			} else {
+				attr.Value = append(attr.Value, tg[i])
+			}
+
+			continue
+		}
+		if tg[i] == ' ' {
+			continue
+		}
+		if tg[i] == '=' { // value of attribute
+			attr.NextIsQuote = true
+			coloredTag = append(coloredTag, []byte(color.White)...)
+
+			continue
+			// i != ln-3 in order do not colorize `/` sign inside an empty tag in case like this `<...attr="value" />`
+		} else if tg[i] == '/' && i == ln-2 { // end attribute value
+			coloredTag = append(coloredTag, tg[i])
+
+			continue
+		}
+		attr.Name = append(attr.Name, tg[i])
+	}
+	coloredTag = append(coloredTag, []byte(color.White)...)
+	coloredTag = append(coloredTag, tg[ln-1]) // add close bracket
+
+	return coloredTag
 }
