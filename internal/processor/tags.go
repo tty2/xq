@@ -1,7 +1,7 @@
 /*
-Package tags is responsible for parsing and printing tags data.
+Package processor is responsible for parsing and printing tags data.
 */
-package tags
+package processor
 
 import (
 	"bufio"
@@ -51,8 +51,8 @@ type (
 	}
 )
 
-// NewProcessor creates a new Processor with needed attributes.
-func NewProcessor(path []domain.Step, attribute string, search domain.SearchType) (*Processor, error) {
+// New creates a new Processor with needed attributes.
+func New(path []domain.Step, attribute string, search domain.SearchType) (*Processor, error) {
 	if len(path) == 0 {
 		return nil, errors.New("query path must not be empty")
 	}
@@ -302,7 +302,7 @@ func (p *Processor) updatePrintList() {
 	case p.query.searchType == domain.TagValue && p.intoQueryPath():
 		p.indentation = len(p.currentPath) - len(p.query.path)
 		p.printList = append(p.printList, string(append(bytes.Repeat([]byte(" "),
-			indentItemSize*p.indentation), p.currentTag.bytes...)))
+			indentItemSize*p.indentation), domain.ColorizeTag(p.currentTag.bytes)...)))
 	}
 }
 

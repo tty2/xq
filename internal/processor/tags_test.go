@@ -1,4 +1,4 @@
-package tags
+package processor
 
 import (
 	"testing"
@@ -788,7 +788,7 @@ func TestUpdatePrintListForTagValue(t *testing.T) {
 
 		p.updatePrintList()
 		rq.Len(p.printList, 1)
-		rq.Equal("<tagname attr1='value1' attr2='value2'>", p.printList[0])
+		rq.Equal(string(domain.ColorizeTag([]byte("<tagname attr1='value1' attr2='value2'>"))), p.printList[0])
 		rq.Equal(0, p.indentation)
 	})
 
@@ -827,7 +827,8 @@ func TestUpdatePrintListForTagValue(t *testing.T) {
 
 		p.updatePrintList()
 		rq.Len(p.printList, 1)
-		rq.Equal("    <tagname attr1='value1' attr2='value2'>", p.printList[0])
+		rq.Equal(string(append([]byte("    "),
+			domain.ColorizeTag([]byte("<tagname attr1='value1' attr2='value2'>"))...)), p.printList[0])
 		rq.Equal(2, p.indentation)
 	})
 }
@@ -1126,14 +1127,14 @@ func TestAddSymbolIntoTag(t *testing.T) {
 	})
 }
 
-func TestNewProcessor(t *testing.T) {
+func TestNew(t *testing.T) {
 	t.Parallel()
 
 	t.Run("error: empty path", func(t *testing.T) {
 		t.Parallel()
 		rq := require.New(t)
 
-		p, err := NewProcessor([]domain.Step{}, "", domain.TagList)
+		p, err := New([]domain.Step{}, "", domain.TagList)
 		rq.Error(err)
 		rq.Nil(p)
 	})
@@ -1142,7 +1143,7 @@ func TestNewProcessor(t *testing.T) {
 		t.Parallel()
 		rq := require.New(t)
 
-		p, err := NewProcessor([]domain.Step{
+		p, err := New([]domain.Step{
 			{
 				Name:  "tagname",
 				Index: -1,
@@ -1191,9 +1192,10 @@ func TestProcess(t *testing.T) {
 		err := p.process([]byte("<tagname attr='value'>\ndata</tag attr='invalid tag name'>"))
 		rq.Error(err)
 		rq.Len(p.printList, 3)
-		rq.Equal(`  <tagname attr='value'>`, p.printList[0])
+		rq.Equal(string(append([]byte("  "), domain.ColorizeTag([]byte(`<tagname attr='value'>`))...)), p.printList[0])
 		rq.Equal(`    data`, p.printList[1])
-		rq.Equal(`  </tag attr='invalid tag name'>`, p.printList[2])
+		rq.Equal(string(append([]byte("  "),
+			domain.ColorizeTag([]byte(`</tag attr='invalid tag name'>`))...)), p.printList[2])
 	})
 }
 
@@ -1352,10 +1354,10 @@ func TestProcessWithIndex(t *testing.T) {
 		err := p.process([]byte(`<objects><object><tg></tg></object><object><tg1></tg1></object><object><tg2></tg2></object></objects>`))
 		rq.NoError(err)
 		rq.Len(p.printList, 4)
-		rq.Equal("<object>", p.printList[0])
-		rq.Equal("  <tg>", p.printList[1])
-		rq.Equal("  </tg>", p.printList[2])
-		rq.Equal("</object>", p.printList[3])
+		rq.Equal(string(domain.ColorizeTag([]byte("<object>"))), p.printList[0])
+		rq.Equal(string(append([]byte("  "), domain.ColorizeTag([]byte("<tg>"))...)), p.printList[1])
+		rq.Equal(string(append([]byte("  "), domain.ColorizeTag([]byte("</tg>"))...)), p.printList[2])
+		rq.Equal(string(domain.ColorizeTag([]byte("</object>"))), p.printList[3])
 	})
 
 	t.Run("tag value: second", func(t *testing.T) {
@@ -1384,10 +1386,10 @@ func TestProcessWithIndex(t *testing.T) {
 		err := p.process([]byte(`<objects><object><tg></tg></object><object><tg1></tg1></object><object><tg2></tg2></object></objects>`))
 		rq.NoError(err)
 		rq.Len(p.printList, 4)
-		rq.Equal("<object>", p.printList[0])
-		rq.Equal("  <tg1>", p.printList[1])
-		rq.Equal("  </tg1>", p.printList[2])
-		rq.Equal("</object>", p.printList[3])
+		rq.Equal(string(domain.ColorizeTag([]byte("<object>"))), p.printList[0])
+		rq.Equal(string(append([]byte("  "), domain.ColorizeTag([]byte("<tg1>"))...)), p.printList[1])
+		rq.Equal(string(append([]byte("  "), domain.ColorizeTag([]byte("</tg1>"))...)), p.printList[2])
+		rq.Equal(string(domain.ColorizeTag([]byte("</object>"))), p.printList[3])
 	})
 
 	t.Run("tag value: single", func(t *testing.T) {
@@ -1416,7 +1418,7 @@ func TestProcessWithIndex(t *testing.T) {
 		err := p.process([]byte(`<objects><object><tg></tg></object><single /><data><tg2></tg2></data></objects>`))
 		rq.NoError(err)
 		rq.Len(p.printList, 1)
-		rq.Equal("<single />", p.printList[0])
+		rq.Equal(string(domain.ColorizeTag([]byte("<single />"))), p.printList[0])
 	})
 
 	t.Run("tag name: first", func(t *testing.T) {
@@ -1716,8 +1718,8 @@ func TestProcessWithIndex(t *testing.T) {
 		err := p.process([]byte(`<objects><object><tg></tg></object><object><tg1></tg1></object><object><tg2></tg2></object></objects>`))
 		rq.NoError(err)
 		rq.Len(p.printList, 2)
-		rq.Equal("<tg>", p.printList[0])
-		rq.Equal("</tg>", p.printList[1])
+		rq.Equal(string(domain.ColorizeTag([]byte("<tg>"))), p.printList[0])
+		rq.Equal(string(domain.ColorizeTag([]byte("</tg>"))), p.printList[1])
 	})
 
 	t.Run("tag value: second tg", func(t *testing.T) {
@@ -1750,7 +1752,7 @@ func TestProcessWithIndex(t *testing.T) {
 		err := p.process([]byte(`<objects><object><tg></tg></object><object><tg1></tg1></object><object><tg2></tg2></object></objects>`))
 		rq.NoError(err)
 		rq.Len(p.printList, 2)
-		rq.Equal("<tg1>", p.printList[0])
-		rq.Equal("</tg1>", p.printList[1])
+		rq.Equal(string(domain.ColorizeTag([]byte("<tg1>"))), p.printList[0])
+		rq.Equal(string(domain.ColorizeTag([]byte("</tg1>"))), p.printList[1])
 	})
 }
