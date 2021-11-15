@@ -827,7 +827,8 @@ func TestUpdatePrintListForTagValue(t *testing.T) {
 
 		p.updatePrintList()
 		rq.Len(p.printList, 1)
-		rq.Equal(string(append([]byte("    "), domain.ColorizeTag([]byte("<tagname attr1='value1' attr2='value2'>"))...)), p.printList[0])
+		rq.Equal(string(append([]byte("    "),
+			domain.ColorizeTag([]byte("<tagname attr1='value1' attr2='value2'>"))...)), p.printList[0])
 		rq.Equal(2, p.indentation)
 	})
 }
@@ -1193,7 +1194,8 @@ func TestProcess(t *testing.T) {
 		rq.Len(p.printList, 3)
 		rq.Equal(string(append([]byte("  "), domain.ColorizeTag([]byte(`<tagname attr='value'>`))...)), p.printList[0])
 		rq.Equal(`    data`, p.printList[1])
-		rq.Equal(string(append([]byte("  "), domain.ColorizeTag([]byte(`</tag attr='invalid tag name'>`))...)), p.printList[2])
+		rq.Equal(string(append([]byte("  "),
+			domain.ColorizeTag([]byte(`</tag attr='invalid tag name'>`))...)), p.printList[2])
 	})
 }
 

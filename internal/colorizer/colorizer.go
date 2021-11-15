@@ -1,5 +1,5 @@
 /*
-Package datcolorizera is responsible for full document parse.
+Package colorizer is responsible for full document parse.
 This part of processing is responsible for full document parsing with colorizing and
 making indentation. This processing doesn't parse and separate tags, attributes and
 values from document structure but optimized for fast processing with less memory
