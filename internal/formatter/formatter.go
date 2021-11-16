@@ -1,11 +1,11 @@
 /*
-Package colorizer is responsible for full document parse.
+Package formatter is responsible for full document parse.
 This part of processing is responsible for full document parsing with colorizing and
 making indentation. This processing doesn't parse and separate tags, attributes and
 values from document structure but optimized for fast processing with less memory
 consumption.
 */
-package colorizer
+package formatter
 
 import (
 	"bufio"
@@ -41,8 +41,8 @@ type (
 	}
 )
 
-// NewProcessor creates a new Processor with needed attributes.
-func NewProcessor(indentationSize int) (*Processor, error) {
+// New creates a new Processor with needed attributes.
+func New(indentationSize int) (*Processor, error) {
 	return &Processor{
 		IndentItemSize: indentationSize,
 	}, nil
@@ -79,7 +79,7 @@ func (p *Processor) Process(r *bufio.Reader) chan string {
 				ch <- p.printList[i]
 			}
 
-			p.printList = []string{}
+			p.printList = p.printList[:0]
 		}
 	}()
 
@@ -175,8 +175,8 @@ func (p *Processor) addToPrintList() error {
 		defer p.downIndent()
 	}
 
-	coloredTag := domain.ColorizeTag(p.CurrentTag.Bytes)
-	coloredTag = append(bytes.Repeat([]byte(" "), p.IndentItemSize*p.Indentation), coloredTag...) // add indentation
+	coloredTag := append(bytes.Repeat([]byte(" "), p.IndentItemSize*p.Indentation),
+		domain.ColorizeTag(p.CurrentTag.Bytes)...) // add indentation
 	p.printList = append(p.printList, string(coloredTag))
 
 	if p.CurrentTag.Bytes[len(p.CurrentTag.Bytes)-2] != '/' {

@@ -3,7 +3,7 @@ package main
 import (
 	"bufio"
 
-	"github.com/tty2/xq/internal/colorizer"
+	"github.com/tty2/xq/internal/formatter"
 	"github.com/tty2/xq/internal/processor"
 )
 
@@ -17,7 +17,7 @@ type prc interface {
 
 func getProcessor(q query) (prc, error) {
 	if len(q.path) == 0 {
-		return colorizer.NewProcessor(indentItemSize)
+		return formatter.New(indentItemSize)
 	}
 
 	return processor.New(q.path, q.attribute, q.searchType)
