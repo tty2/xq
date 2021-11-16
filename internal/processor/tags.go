@@ -174,7 +174,7 @@ func (p *Processor) process(chunk []byte) error {
 				bytes:    []byte{symbol.OpenBracket},
 				brackets: 1,
 			}
-			if p.query.searchType == domain.TagValue && p.intoQueryPath() {
+			if p.query.searchType == domain.TagValue && p.queryIntoCurrentPath() {
 				if p.index.set {
 					if !p.index.insideTarget {
 						continue
@@ -189,7 +189,7 @@ func (p *Processor) process(chunk []byte) error {
 					indentItemSize*p.indentation+indentItemSize), p.tagValue...)))
 				p.tagValue = []byte{}
 			}
-		case p.query.searchType == domain.TagValue && p.intoQueryPath():
+		case p.query.searchType == domain.TagValue && p.queryIntoCurrentPath():
 			if p.index.set {
 				if !p.index.insideTarget {
 					continue
@@ -299,7 +299,7 @@ func (p *Processor) updatePrintList() {
 		if !slice.ContainsString(p.printList, av) {
 			p.printList = append(p.printList, av)
 		}
-	case p.query.searchType == domain.TagValue && p.intoQueryPath():
+	case p.query.searchType == domain.TagValue && p.queryIntoCurrentPath():
 		p.indentation = len(p.currentPath) - len(p.query.path)
 		p.printList = append(p.printList, string(append(bytes.Repeat([]byte(" "),
 			indentItemSize*p.indentation), domain.ColorizeTag(p.currentTag.bytes)...)))
@@ -322,7 +322,7 @@ func (p *Processor) tagInQueryPath() bool {
 	return true
 }
 
-func (p *Processor) intoQueryPath() bool {
+func (p *Processor) queryIntoCurrentPath() bool {
 	if len(p.query.path) > len(p.currentPath) {
 		return false
 	}

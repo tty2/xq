@@ -1199,7 +1199,7 @@ func TestProcess(t *testing.T) {
 	})
 }
 
-func TestIntoQueryPath(t *testing.T) {
+func TestQueryIntoCurrentPath(t *testing.T) {
 	t.Parallel()
 	rq := require.New(t)
 
@@ -1230,7 +1230,7 @@ func TestIntoQueryPath(t *testing.T) {
 			currentPath: []string{"1", "2", "3"},
 		}
 
-		rq.False(p.intoQueryPath())
+		rq.False(p.queryIntoCurrentPath())
 	})
 
 	t.Run("false: different", func(t *testing.T) {
@@ -1260,7 +1260,7 @@ func TestIntoQueryPath(t *testing.T) {
 			currentPath: []string{"1", "2", "8", "4", "5"},
 		}
 
-		rq.False(p.intoQueryPath())
+		rq.False(p.queryIntoCurrentPath())
 	})
 
 	t.Run("true: the same", func(t *testing.T) {
@@ -1290,7 +1290,7 @@ func TestIntoQueryPath(t *testing.T) {
 			currentPath: []string{"1", "2", "3", "4"},
 		}
 
-		rq.True(p.intoQueryPath())
+		rq.True(p.queryIntoCurrentPath())
 	})
 
 	t.Run("true: greater", func(t *testing.T) {
@@ -1320,7 +1320,7 @@ func TestIntoQueryPath(t *testing.T) {
 			currentPath: []string{"1", "2", "3", "4", "5"},
 		}
 
-		rq.True(p.intoQueryPath())
+		rq.True(p.queryIntoCurrentPath())
 	})
 }
 
