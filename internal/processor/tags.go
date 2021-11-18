@@ -276,7 +276,7 @@ func (p *Processor) updatePrintList() {
 	}
 	switch {
 	case p.query.searchType == domain.TagList && p.tagInQueryPath():
-		tn := strings.TrimSpace(p.currentTag.name)
+		tn := p.currentTag.name
 		if !slice.ContainsString(p.printList, tn) {
 			p.printList = append(p.printList, tn)
 		}
