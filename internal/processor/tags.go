@@ -6,7 +6,6 @@ package processor
 import (
 	"bufio"
 	"bytes"
-	"errors"
 	"fmt"
 	"io"
 	"strings"
@@ -53,10 +52,6 @@ type (
 
 // New creates a new Processor with needed attributes.
 func New(path []domain.Step, attribute string, search domain.SearchType) (*Processor, error) {
-	if len(path) == 0 {
-		return nil, errors.New("query path must not be empty")
-	}
-
 	return &Processor{
 		query: query{
 			path:       path,

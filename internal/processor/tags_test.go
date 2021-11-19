@@ -1134,9 +1134,8 @@ func TestNew(t *testing.T) {
 		t.Parallel()
 		rq := require.New(t)
 
-		p, err := New([]domain.Step{}, "", domain.TagList)
-		rq.Error(err)
-		rq.Nil(p)
+		_, err := New([]domain.Step{}, "", domain.TagList)
+		rq.NoError(err)
 	})
 
 	t.Run("ok", func(t *testing.T) {
