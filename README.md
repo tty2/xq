@@ -45,42 +45,59 @@ third level
 
 ### get a tag value in a list
 
-if tag is a container for other tags
-
     ~$ xq .objects.object
 
-    <title lang="EN">Name</title>
-    <description>Name</description>
-    <key attr="first">1</key>
+    <object>
+        <title lang="EN">
+            Name
+        </title>
+        <description>
+            Name
+        </description>
+        <key attr="first">
+            1
+        </key>
+    </object>
+    <object>
+        <title lang="RU">
+            Имя
+        </title>
+        <description>
+            Описание
+        </description>
+        <key attr="second">
+            2
+        </key>
+    </object>
 
-    <title lang="RU">Имя</title>
-    <description>Описание</description>
-    <key attr="second">2</key>
 
-
-if tag is a container for scalar data
+another example
 
     ~$ xq .objects.object.title
 
-    Name
-    Имя
+    <title lang="EN">
+        Name
+    </title>
+    <title lang="RU">
+        Имя
+    </title>
 
 ### get a value of a concrete tag 
 
 
-if tag is a container for other tags
-
     ~$ xq .objects.object[0]
 
-    <title lang="EN">Name</title>
-    <description>Name</description>
-    <key attr="first">1</key>
-
-if tag is a container for scalar data
-
-    ~$ xq .objects.object[0].title
-
-    Name
+    <object>
+        <title lang="EN">
+            Name
+        </title>
+        <description>
+            Name
+        </description>
+        <key attr="first">
+            1
+        </key>
+    </object>
 
 ### get an attribute value
 

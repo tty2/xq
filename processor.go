@@ -3,6 +3,7 @@ package main
 import (
 	"bufio"
 
+	"github.com/tty2/xq/internal/domain"
 	"github.com/tty2/xq/internal/formatter"
 	"github.com/tty2/xq/internal/processor"
 )
@@ -16,7 +17,7 @@ type prc interface {
 }
 
 func getProcessor(q query) (prc, error) {
-	if len(q.path) == 0 {
+	if len(q.path) == 0 && q.searchType == domain.TagValue {
 		return formatter.New(indentItemSize)
 	}
 
