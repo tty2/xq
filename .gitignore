@@ -2,3 +2,4 @@ xq
 generate
 .vscode
 .env
+dist/
