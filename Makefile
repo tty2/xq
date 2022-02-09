@@ -40,6 +40,8 @@ test: ## Run go tests for files with tests.
 	@if [ $$(cat fixtures/hashes.txt | sed -n 22p) = $$(cat fixtures/film.xml | go run main.go processor.go query.go attr .objects.object.poster[0]#url | md5sum | awk '{print $$1}') ]; then echo "PASSED"; else exit 125; fi
 	@if [ $$(cat fixtures/hashes.txt | sed -n 23p) = $$(cat fixtures/film.xml | go run main.go processor.go query.go tags .objects.object[0].actors | md5sum | awk '{print $$1}') ]; then echo "PASSED"; else exit 125; fi
 
+	cat fixtures/film.xml | go run -race main.go processor.go query.go > /dev/null
+
 beautify:
 	gofumpt -l -w ./$$(go list -f {{.Dir}} ./... | grep -v /vendor/)
 
