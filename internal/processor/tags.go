@@ -352,7 +352,7 @@ func (p *Processor) decrementPath() error {
 	}
 
 	if p.currentPath[ln-1] != p.currentTag.name {
-		return fmt.Errorf("incorrect xml structure: the last open tag is %s, but close tag is %s",
+		return fmt.Errorf("incorrect xml structure: the last open tag is `%s`, but close tag is `%s`",
 			p.currentPath[ln-1], p.currentTag.name)
 	}
 
@@ -382,7 +382,7 @@ func (t *tag) setName() error {
 	endName := startName
 
 	for ; endName < len(t.bytes)-1; endName++ {
-		if t.bytes[endName] == ' ' {
+		if symbol.IsSpace(t.bytes[endName]) {
 			break
 		}
 	}

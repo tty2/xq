@@ -21,3 +21,12 @@ const (
 func IsQuote(s byte) bool {
 	return s == Quote || s == DoubleQuote
 }
+
+// IsSpace checks is byte is space.
+func IsSpace(s byte) bool {
+	if s == ' ' || s == '\n' || s == '\t' {
+		return true
+	}
+
+	return false
+}
